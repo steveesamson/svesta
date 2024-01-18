@@ -54,8 +54,7 @@ Transport.configure({ BASE_URL: 'https://reqres.in/api' });
 ###
 
 ```html
-<h1 class="header"><strong>Svesta</strong> Docs</h1>
-
+<h1 class="header"><strong>Users</strong></h1>
 <Resource store="{users}" let:items bind:meta busy="blocked">
 	<Users users="{items}" let:user>
 		<Item {...user} />
