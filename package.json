@@ -27,7 +27,12 @@
 	"peerDependencies": {
 		"svelte": "^4.0.0"
 	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/steveesamson/svesta.git"
+	},
 	"author": "Steve S. Samson <stevee.samson@gmail.com> (http://github.com/steveesamson)",
+	"homepage": "https://steveesamson.github.io/svesta",
 	"keywords": [
 		"svesta",
 		"svelte-state",

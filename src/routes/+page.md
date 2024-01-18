@@ -598,3 +598,7 @@ const accounts = useStore<Account>('some');
 	<!-- make use of  -->
 </Resource>
 ```
+
+# TODO
+
+At the moment, `Transport.configure` sets an app-wide settings for `svesta`, I love to implement a none-global configuration, a per-need type.
