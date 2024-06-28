@@ -1,47 +1,53 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import type { StoreMeta, Params, StoreProps } from '$lib/types/index.js';
-	import { useStore } from '$lib/store.js';
+	import type { Params, StoreProps } from '$lib/types/index.js';
+	import { useStore } from '$lib/store.svelte.js';
+	import { resultTransformer } from "./demo-assets/transformer.js";
+	import Loader from '$lib/components/block-loader.svelte';
 	import Resource from '$lib/components/resource.svelte';
-	import { resultTransformer } from './demo-assets/transformer.js';
-	import Users from './demo-assets/users.svelte';
-	import Item from './demo-assets/item.svelte';
+	import UserList from './demo-assets/users.svelte';
 	import type { User } from './demo-assets/types.js';
 
-	let meta: StoreMeta;
 
 	const usersProps: StoreProps<User> = {
 		resultTransformer,
 		queryTransformer: (raw: Params) => {
-			return raw;
+			return raw;  
 		}
 	};
-	const users = useStore<User>('users', usersProps);
-	const handleNext = () => users.pageTo(meta.page + 1);
+	const users = useStore<User>( 'users', usersProps );
 
-	const handlePrev = () => users.pageTo(meta.page - 1);
-
-	const onMore = () => {
-		users.next();
-	};
-	onMount(() => {
+	$effect(() => {
 		users.sync();
 	});
 </script>
 
-<h1 class="header"><strong>Svesta</strong> Demo</h1>
-<Resource store={users} let:items bind:meta busy="blocked">
-	<Users users={items} let:user>
-		<Item {...user} />
-	</Users>
-	{#if meta}
+
+{#snippet resolve({ data, page, pages, loading }) }
+	
+	<UserList users={ data } />	
+	{#if loading}
+		<Loader color='tomato'/>
+	{/if}
+	{#if data}
 		<div class="buttons">
-			<button on:click={handlePrev} disabled={meta.page === 1}> Previous page</button>
-			<button on:click={handleNext} disabled={meta.page === meta.pages}> Next page</button>
-			<button on:click={onMore} disabled={meta.page === meta.pages}>more(append to view)...</button>
+			<button onclick={ users.prev } disabled={ page === 1 }> 
+				Previous page
+			</button>
+			<button onclick={ users.next } disabled={ page === pages }> 
+				Next page
+			</button>
+			<button onclick={ users.more } disabled={ page === pages }>
+				More(append to view)...
+			</button>
 		</div>
 	{/if}
-</Resource>
+{/snippet}
+
+<h1 class="header">
+	<strong>Svesta</strong> Demo
+</h1>
+
+<Resource store={users} { resolve }/>
 
 <style>
 	.header {

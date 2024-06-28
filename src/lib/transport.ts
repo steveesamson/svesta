@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEvents } from './events.js';
+import { useEvents } from './events.svelte.js';
 import { networkStatus } from './network-status.js';
 import { useRealtime } from './realtime.js';
 import type { HTTPMethod, Params, TransportResponse, TransportConfig } from './types/index.js';
@@ -28,7 +28,7 @@ const withFetch = async (
 	method: HTTPMethod,
 	params: Params | undefined = undefined,
 ): Promise<TransportResponse> => {
-	if (!networkStatus.isOnline()) {
+	if (!networkStatus.isOnline) {
 		return Promise.resolve({ error: 'You seem to be offline :)', status: 500 });
 	}
 	const { BASE_URL, init } = config;
@@ -50,7 +50,7 @@ const withFetch = async (
 
 	const remote = `${BASE_URL}${url}`;
 	const body = hasBody ? JSON.stringify(params || {}) : undefined;
-	loading.setTo(true);
+	loading.data = true;
 
 	try {
 

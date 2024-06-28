@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Params, TransportType, HTTPMethod } from './types/index.js';
+import type { Params, HTTPMethod } from './types/index.js';
+import type { InternalTransportType } from './types/internal.js';
 
-export const useRealtime = async (Transport: TransportType) => {
+export const useRealtime = async (Transport: InternalTransportType) => {
     try {
         const ioClient = await import('socket.io-client');
         const { io } = ioClient;

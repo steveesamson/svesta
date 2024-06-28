@@ -1,4 +1,4 @@
-import { type Writable, writable, get as g } from 'svelte/store';
+// import { type Writable, writable, get as g } from 'svelte/store';
 import { Transport } from './transport.js';
 import { debounce, makeName } from './utils.js';
 import type {
@@ -17,7 +17,7 @@ type GetStore<T> = {
 	params: Params;
 	order: string;
 	orderBy: string;
-	store: Writable<StoreState<T>>;
+	store: StoreState<T>;
 	resultKey: string;
 	namespace: string;
 	reverse: boolean;
@@ -45,7 +45,7 @@ const getStore = <T extends WithID>(
 		resultTransformer,
 		queryTransformer }: GetStore<T>
 ): IStore<T> => {
-	const { data: initData = [] } = g(store);
+	const { data: initData = [] } = store;
 
 	let offset = 0,
 		query = {},
@@ -59,7 +59,7 @@ const getStore = <T extends WithID>(
 		url = `/${name}`;
 
 	const isLoading = (loading: boolean) => {
-		store.update((staleState: StoreState<T>) => ({ ...staleState, loading }));
+		store.loading = loading;
 	};
 	const search = (s: string) =>
 		debounce(() => {
@@ -78,19 +78,11 @@ const getStore = <T extends WithID>(
 		query = q;
 		sync();
 	};
-	const value = () => {
-		return g(store);
-	};
-	const paginate = async (_offset: number) => {
-		if (+_offset + 1 === page) return;
-		offset = +_offset * LIMIT;
-		page = +_offset + 1;
-		insync = false;
-		sync();
-	};
-	const pageTo = async (nextPage: number): Promise<void> => {
+
+	const next = async (): Promise<void> => {
+		const { recordCount, page:curPage } = store;
+		const nextPage = curPage + 1;
 		const _offset = (nextPage - 1) * LIMIT;
-		const { recordCount } = value();
 		if (_offset >= recordCount) {
 			return;
 		}
@@ -100,18 +92,53 @@ const getStore = <T extends WithID>(
 		infinite = false;
 		query = { ...query, page: nextPage };
 		await sync();
-		const { error } = value();
+		const { error } = store;
+		if (!error) {
+			page = nextPage;
+		}
+	};
+	const prev = async (): Promise<void> => {
+		const { recordCount, page:curPage } = store;
+		const nextPage = curPage - 1;
+		const _offset = (nextPage - 1) * LIMIT;
+		if (_offset >= recordCount) {
+			return;
+		}
+
+		offset = _offset;
+		insync = false;
+		infinite = false;
+		query = { ...query, page: nextPage };
+		await sync();
+		const { error } = store;
+		if (!error) {
+			page = nextPage;
+		}
+	};
+	const pageTo = async (nextPage: number): Promise<void> => {
+		const _offset = (nextPage - 1) * LIMIT;
+		const { recordCount } = store;
+		if (_offset >= recordCount) {
+			return;
+		}
+
+		offset = _offset;
+		insync = false;
+		infinite = false;
+		query = { ...query, page: nextPage };
+		await sync();
+		const { error } = store;
 		if (!error) {
 			page = nextPage;
 		}
 	};
 
-	const next = async (): Promise<void> => {
+	const more = async (): Promise<void> => {
 		if (!insync) {
 			return console.log('Store not prefetched!');
 		}
 		const _offset = page * LIMIT;
-		const { recordCount, loading } = value();
+		const { recordCount, loading } = store;
 		if (_offset >= recordCount || loading) {
 
 			return;
@@ -122,7 +149,7 @@ const getStore = <T extends WithID>(
 		infinite = true;
 		query = { ...query, page: nextPage };
 		await sync();
-		const { error } = value();
+		const { error } = store;
 		if (!error) {
 			page = nextPage;
 		}
@@ -153,19 +180,23 @@ const getStore = <T extends WithID>(
 			// Use limit from API
 			LIMIT = limit;
 		}
+		if (reverse) {
+			data.reverse();
+		}
+		const { data: staleData } = store;
+		const newData = infinite
+			? reverse
+				? [...data, ...(staleData || [])]
+				: [...(staleData || []), ...data]
+			: data;
 
-		store.update(({ data: staleData }: StoreState<T>) => {
-			if (reverse) {
-				data.reverse();
-			}
-			const newData = infinite
-				? reverse
-					? [...data, ...(staleData || [])]
-					: [...(staleData || []), ...data]
-				: data;
-			const pages = _pgs ? _pgs : (recordCount ? Math.ceil(recordCount / LIMIT) : 0);
-			return { data: newData, recordCount, page, pages, loading: false, error: null };
-		});
+		const pages = _pgs ? _pgs : (recordCount ? Math.ceil(recordCount / LIMIT) : 0);
+		store.data = newData;
+		store.page = page;
+		store.pages = pages;
+		store.loading = false;
+		store.error = null;
+		store.recordCount = recordCount;
 		insync = true;
 	};
 	const mutateRemove = async (inData: T) => {
@@ -175,18 +206,15 @@ const getStore = <T extends WithID>(
 
 		const exists = await find(inData.id);
 		if (exists) {
-			store.update(({ data: oldData, recordCount: oldRecordCount }: StoreState<T>) => {
-				const recordCount = oldRecordCount - 1;
-				const data = oldData.filter((e: T) => e.id != inData.id);
-				const pages = recordCount ? Math.ceil(recordCount / LIMIT) : 0;
-				return {
-					page,
-					data,
-					recordCount,
-					pages,
-					loading: false
-				};
-			});
+			const { data: oldData, recordCount: oldRecordCount } = store;
+			const recordCount = oldRecordCount - 1;
+			const data = oldData.filter((e: T) => e.id != inData.id);
+			const pages = recordCount ? Math.ceil(recordCount / LIMIT) : 0;
+			store.data = data;
+			store.page = page;
+			store.pages = pages;
+			store.loading = false;
+			store.recordCount = recordCount;
 		}
 	};
 
@@ -199,28 +227,28 @@ const getStore = <T extends WithID>(
 			return;
 		}
 		inData = { ...inData, isNew: true };
-		store.update(({ data: staleData, recordCount: oldRecordCount }: StoreState<T>) => {
-			const data = reverse
+		const { data: staleData, recordCount: oldRecordCount } = store;
+		const data = reverse
 				? [...(staleData || []), inData]
 				: order === 'asc'
 					? [...(staleData || []), inData]
 					: [inData, ...(staleData || [])];
 			const recordCount = oldRecordCount + 1;
 			const pages = recordCount ? Math.ceil(recordCount / LIMIT) : 0;
-			return { data, recordCount, page, pages, loading: false };
-		});
+			store.data = data;
+			store.page = page;
+			store.pages = pages;
+			store.loading = false;
+			store.recordCount = recordCount;
+
 	};
 	const mutatePatch = (inData: T) => {
 		if (!insync) {
 			return;
 		}
-		store.update(({ data: staleData, ...rest }: StoreState<T>) => {
-			const data = (staleData || []).map((rec: T) => (rec.id == inData.id ? { ...rec, ...inData } : rec));
-			return {
-				...rest,
-				data
-			};
-		});
+		const { data: staleData, ...rest } = store;
+		const data = (staleData || []).map((rec: T) => (rec.id == inData.id ? { ...rec, ...inData } : rec));
+		store.data = data;	
 	};
 
 	const sync = async (initData?: StoreState<T>) => {
@@ -233,13 +261,8 @@ const getStore = <T extends WithID>(
 		const { error, ...others } = await Transport.sync(url, 'get', { ...qry });
 		isLoading(false);
 		if (error) {
-			return store.update((oldState: StoreState<T>) => {
-				return {
-					...oldState,
-					loading: false,
-					error
-				};
-			});
+			store.error = error;
+			store.loading = false;
 		}
 		if (others) {
 			const res = resultTransformer(others) as StoreState<T>;
@@ -287,7 +310,7 @@ const getStore = <T extends WithID>(
 		if (!insync) {
 			await sync();
 		}
-		const { data = [] } = g(store) as StoreState<T>;
+		const { data = [] } = store;
 		return data.find((v: Params) => v[key] == value);
 	};
 	const despace = (_data: Params) => Transport.post(`${url}/despace`, _data);
@@ -357,17 +380,17 @@ const getStore = <T extends WithID>(
 	if (realTime) {
 		startListening();
 	}
-	const noOp = () => { };
 
 	return {
-		set: noOp,
-		update: noOp,
-		subscribe: store.subscribe,
+		get result(){
+			return store;
+		},
 		sync,
-		next,
 		on,
 		search,
-		paginate,
+		next,
+		prev,
+		more,
 		pageTo,
 		post,
 		get,
@@ -439,7 +462,7 @@ export const useStore = <T extends WithID>(
 	const NS = namespace.replace('~', '');
 
 	if (store) {
-		const { limit = 25 } = g(store) as StoreState<T>;
+		const { limit = 25 } = store as StoreState<T>;
 		return getStore(
 			{
 				name: resourceName,
@@ -468,7 +491,7 @@ export const useStore = <T extends WithID>(
 	} as StoreState<T>;
 
 	const fusedState = { ...defaultStoreData, ...initData };
-	const newStore = writable<StoreState<T>>(fusedState);
+	const newStore: StoreState<T> = $state<StoreState<T>>(fusedState);
 	stores[resultKey] = newStore;
 	const { limit = 25 } = fusedState;
 	return getStore(

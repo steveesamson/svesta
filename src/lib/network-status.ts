@@ -14,12 +14,12 @@ const updateConnectionStatus = () => {
 };
 
 type TNetworkStatus = {
-	isOnline: () => boolean;
+	isOnline: boolean;
 	register: () => () => void;
 };
 
 export const networkStatus: TNetworkStatus = {
-	isOnline() {
+	get isOnline() {
 		return get(status);
 	},
 	register() {

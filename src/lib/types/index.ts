@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Writable } from "svelte/store";
 import type { Fetch, WithID } from "./internal.js";
 import type { ComponentType } from "svelte";
 
@@ -46,6 +45,16 @@ export type TransportResponse<T = unknown> = {
 /**
  * page, limit, recordCount, pages, data
  */
+
+export type StoreResult<T> = {
+    data: T[];
+    recordCount: number;
+    pages: number;
+    page: number;
+    limit?: number;
+    loading?: boolean;
+    error?: string | null | undefined;
+}
 export type StoreState<T> = {
     data: T[];
     recordCount: number;
@@ -59,10 +68,13 @@ export type StoreState<T> = {
 export type StoreEvent = 'refresh' | 'create' | 'destroy' | 'update';
 export type StoreTransformer = (response: Params) => Params;
 
-export interface IStore<T> extends Writable<StoreState<T>> {
+export interface IStore<T> {
+    result: StoreResult<T>;
     sync: (init?: StoreState<T>) => void;
-    next: () => void;
+    more: () => void;
     pageTo: (page: number) => void;
+    next: () => void;
+    prev: () => void;
     on: (event: StoreEvent, handler: EventHandler) => void;
     search: (searchTerm: string) => void;
     destroy: (where: WithID) => Promise<TransportResponse>;
@@ -72,17 +84,12 @@ export interface IStore<T> extends Writable<StoreState<T>> {
     get: (path: string, params: Params) => Promise<TransportResponse>;
     despace: (data: Params) => Promise<TransportResponse>;
     upload: (file: Params) => Promise<TransportResponse>;
-    paginate: (offset: number) => Promise<void>;
+    // paginate: (offset: number) => Promise<void>;
     filter: (query: Partial<T>) => void;
     remove: (inData: T) => void;
     add: (inData: T) => void;
     patch: (inData: T) => void;
     debug: () => void;
-}
-
-export type StoreMeta = {
-    pages: number;
-    page: number;
 }
 
 export type TransportConfig = {
