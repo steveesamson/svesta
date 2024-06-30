@@ -566,6 +566,7 @@ const onMore = () => accounts.more();
 ```html
 
 {#snippet resolve({ loading, data, error, page, pages }:StoreResult<Account>)}
+	
 	{#if data}
 		<AccountList users={data} />
 		<div class="buttons">
@@ -582,6 +583,7 @@ const onMore = () => accounts.more();
 			
 		</div>
 	{/if}
+
 	{#if loading}
 		<p class='spinner'>Fetching data...</p>
 	{if}

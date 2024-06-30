@@ -25,9 +25,11 @@
 {#snippet resolve({ data, page, pages, loading }:StoreResult<User>) }
 	
 	<UserList users={ data } />	
+	
 	{#if loading}
 		<Loader color='tomato'/>
 	{/if}
+
 	{#if data}
 		<div class="buttons">
 			<button onclick={ users.prev } disabled={ page === 1 }> 
