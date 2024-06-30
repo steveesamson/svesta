@@ -1,5 +1,7 @@
-<script>
+<script lang='ts'>
+	import type { PageData } from "./$types.js"
 	import Demo from './demo.svelte';
+	const { data } = $props<{ data: PageData }>();
 </script>
 
 <svelte:head>
@@ -9,7 +11,7 @@
 <meta property="og:title" content="Svesta demo" />
 </svelte:head>
 
-<Demo />
+<Demo {data}/>
 
 ## Source code for svesta demo
 
@@ -29,7 +31,7 @@ Transport.configure({ BASE_URL: 'https://reqres.in/api' });
 
 <script>
 
-	import { type StoreProps, useStore, Resource, Loader } from 'svesta';
+	import { type StoreProps, useStore, Resource, Loader, type StoreResult } from 'svesta';
 	import { resultTransformer } from "./demo-assets/transformer.js";
 
 	import UserList from './demo-assets/users.svelte';
@@ -55,7 +57,7 @@ Transport.configure({ BASE_URL: 'https://reqres.in/api' });
 
 ```html
 
-{#snippet resolve({ data, page, pages, loading })}
+{#snippet resolve({ data, page, pages, loading }:StoreResult<User>)}
 
 	<UserList users={data} />
 

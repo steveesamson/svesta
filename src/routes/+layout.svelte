@@ -1,6 +1,7 @@
 <script>
 	import { base } from '$app/paths';
 	import { page } from '$app/stores';
+	// import { version } from "../../package.json";
 	const { children } = $props();
 	let path = $page.route.id;
 </script>
@@ -9,6 +10,7 @@
 	<nav>
 		<div>
 			<strong>Svesta</strong>
+			<!-- <em>Svelte state library: v{version}</em> -->
 			<em>Svelte state library</em>
 		</div>
 		<a href={`${base}/`} title="Svesta Docs" class:active={path === '/'}>Svesta Docs</a>

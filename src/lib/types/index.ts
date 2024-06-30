@@ -42,6 +42,8 @@ export type TransportResponse<T = unknown> = {
     message?: string;
 };
 
+export type ResolveSnippet<T> = (to:StoreResult<T>) => void;
+
 /**
  * page, limit, recordCount, pages, data
  */
@@ -52,6 +54,7 @@ export type StoreResult<T> = {
     pages: number;
     page: number;
     limit?: number;
+    length:number;
     loading?: boolean;
     error?: string | null | undefined;
 }

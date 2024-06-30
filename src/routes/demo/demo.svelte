@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Params, StoreProps } from '$lib/types/index.js';
+	import type { Params, StoreResult, StoreProps, StoreState } from '$lib/types/index.js';
 	import { useStore } from '$lib/store.svelte.js';
 	import { resultTransformer } from "./demo-assets/transformer.js";
 	import Loader from '$lib/components/block-loader.svelte';
@@ -7,22 +7,22 @@
 	import UserList from './demo-assets/users.svelte';
 	import type { User } from './demo-assets/types.js';
 
+	const { data } = $props<{ data: StoreState<User> }>();
 
 	const usersProps: StoreProps<User> = {
 		resultTransformer,
+		initData: data,
 		queryTransformer: (raw: Params) => {
 			return raw;  
 		}
 	};
 	const users = useStore<User>( 'users', usersProps );
+	
 
-	$effect(() => {
-		users.sync();
-	});
 </script>
 
 
-{#snippet resolve({ data, page, pages, loading }) }
+{#snippet resolve({ data, page, pages, loading }:StoreResult<User>) }
 	
 	<UserList users={ data } />	
 	{#if loading}

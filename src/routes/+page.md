@@ -37,7 +37,6 @@ Once you've added `svesta` to your project, use it as shown below, in your proje
 
 <script>
 
-	import { onMount } from 'svelte';
 	import { 
 		type StoreProps, 
 		Transport, 
@@ -54,13 +53,14 @@ Once you've added `svesta` to your project, use it as shown below, in your proje
     const usersProps:StoreProps<User> = {
 		resultTransformer
 	};
+
 	const users = useStore<User>('users', usersProps);
 
 	const handleNext = () => users.next();
 	const handlePrev = () => users.prev();
 	const onMore = () => users.more();
 
-	onMount(() => {
+	$effect(() => {
 		// Ensure BASE_URL is already set on Transport
 		// It is better done one time inside +layout.ts
 		// instead of inside every view like the following
@@ -82,7 +82,8 @@ Once you've added `svesta` to your project, use it as shown below, in your proje
 
 	import {  
 		type StoreProps, 
-		type StoreState, 
+		type StoreState,
+		type StoreResult, 
 		useStore, 
 		Resource 
 		} from 'svesta';
@@ -92,8 +93,7 @@ Once you've added `svesta` to your project, use it as shown below, in your proje
 	import Item from './sample/item.svelte';
 	import type { User } from './sample/types.js';
 
-	export let data: PageData;
-
+	const { data } = $props<{ data:PageData }>();
 
     const usersProps:StoreProps<User> = {
 		initData: data as StoreState<User>,
@@ -136,7 +136,7 @@ export const load: PageLoad = async ({ fetch }) => {
 
 ```html
 
-{#snippet resolve({ data, loading, error, page, pages })}
+{#snippet resolve({ data, loading, error, page, pages }: StoreResult<User>)}
 
 	<UserList users={data} />
 
@@ -187,6 +187,7 @@ export const resultTransformer = (raw: Params = {}) => {
 
 	const { page, per_page: limit, total: recordCount, total_pages: pages, data } = raw;
 	return { page, limit, recordCount, pages, data };
+
 };
 
 ```
@@ -322,7 +323,7 @@ As mentioned earlier, `Resource`, is a `svelte` component, which helps manage th
 `Resource` accepts 2 props:
 
 - `store`: A type of `IStore<T>`, which by all means is an instance of `useStore`. This prop is required.
-- `resolve`: A `svelte runes snippet` that get called when `Resource` resolves the `store` passed to it. It is responsible for rendering the data from `store` when store resolves. This prop is required.
+- `resolve`: A `svelte runes snippet` of type `Snippet<[StoreResult<T>]>` that get called when `Resource` resolves the `store` passed to it. It is responsible for rendering the data from `store` when store resolves. This prop is required.
 
 See example in demo app.
 
@@ -332,7 +333,7 @@ See example in demo app.
 ```ts
 // svelte file
 <script>
-import { useStore } from 'svesta';
+import { useStore, type StoreResult } from 'svesta';
 import type Account from '...';
 
 const accounts = useStore<Account>('some');
@@ -343,7 +344,7 @@ const accounts = useStore<Account>('some');
 
 ```html
 
-{#snippet resolve({ data, loading, error, page, pages })}
+{#snippet resolve({ data, loading, error, page, pages }:StoreResult<Account>)}
 
 	<AccountList users={data} />
 
@@ -404,7 +405,8 @@ const usersProps: StoreProps<User> = {
 	// That is profile is not known to you system but 'users'
 	// namespace defaults to ''.
 	namespace: '',
-	// You can pre-populate a store by passing `initData`.
+	// You can pre-populate a store by passing `initData` 
+	// of StoreState<T> type
 	// It defaults to {}
 	initData: {},
 	// includes helps control what fields are returned
@@ -552,7 +554,7 @@ accounts.sync(initData)
 
   > This is asynchronous, therefore, if you need the population before something else, you must `await` its call. Important to note also is that the new result is added/appended to the previous store data not replaced.
 ```ts
-import { useStore, Resource } from 'svesta';
+import { useStore, Resource, type StoreResult } from 'svesta';
 import type Account from '...';
 
 const accounts = useStore<Account>('accounts',...);
@@ -563,7 +565,7 @@ const onMore = () => accounts.more();
 
 ```html
 
-{#snippet resolve({ loading, data, error, page, pages })}
+{#snippet resolve({ loading, data, error, page, pages }:StoreResult<Account>)}
 	{#if data}
 		<AccountList users={data} />
 		<div class="buttons">
@@ -651,12 +653,12 @@ accounts.search('google');
 - `.get`: This does a scoped `GET` based on resource but appends the passed `path` to resource `url`. When this executes, it does not updates the store. It returns a `Promise<TransportResponse<T>>`.
 
 ```ts
-import { onMount } from 'svelte';
+
 import { useStore } from 'svesta';
 import type Account from '...';
 
 const accounts = useStore<Account>('accounts',...);
-onMount(async () => {
+$effect(async () => {
     // The following will make a GET request to `/accounts/checking`
     // path using the passed params
     const { data, error} = await accounts.get('/checking',{...});
@@ -666,12 +668,11 @@ onMount(async () => {
 - `.post`: This does a scoped `POST` based on resource but appends the passed `path` to resource `url`. When this executes, it does not updates the store. It returns a `Promise<TransportResponse<T>>`.
 
 ```ts
-import { onMount } from 'svelte';
 import { useStore } from 'svesta';
 import type Account from '...';
 
 const accounts = useStore<Account>('accounts',...);
-onMount(async () => {
+$effect(async () => {
     // The following will make a request to POST `/accounts/checking`
     // path using the passed params
     const { data, error} = await accounts.post('/checking',{...});
@@ -735,9 +736,8 @@ const account = {accountName:'Account Name', accountNo:2345566, id:new Date().ge
 accounts.add(account);
 accounts.patch({...account, accountName:'Updated Account Name'});
 accounts.remove(account);
+
 ```
-
-
 
 # TODO
 
