@@ -22,12 +22,16 @@
 </script>
 
 
-{#snippet resolve({ data, page, pages, loading }:StoreResult<User>) }
+{#snippet resolve({ data, page, pages, loading, error }:StoreResult<User>) }
 	
 	<UserList users={ data } />	
-	
+
 	{#if loading}
 		<Loader color='tomato'/>
+	{/if}
+
+	{#if error}
+		<p>Error:{error}</p>
 	{/if}
 
 	{#if data}

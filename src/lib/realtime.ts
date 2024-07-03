@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { networkStatus } from './network-status.svelte.js';
 import type { Params, HTTPMethod } from './types/index.js';
 import type { InternalTransportType } from './types/internal.js';
 
@@ -9,8 +10,14 @@ export const useRealtime = async (Transport: InternalTransportType) => {
         const { BASE_URL, DEBUG } = Transport.config;
 
         const socket = io(`${BASE_URL}`, { transports: ['websocket'] }); //['polling','websocket'];
+
         socket.on('connect', function () {
+
             Transport.sync = function (url: string, method: HTTPMethod, data?: Params) {
+                if (!networkStatus.isOnline()) {
+                    networkStatus.qeueuRefresh();
+                    return Promise.resolve({ error: 'You seem to be offline :)', status: 500 });
+                }
                 return new Promise((resolve) => {
                     try {
                         socket.emit(method, { path: url, data }, (m: Params) => {

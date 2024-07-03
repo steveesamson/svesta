@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEvents } from './events.svelte.js';
-import { networkStatus } from './network-status.js';
+import { networkStatus } from './network-status.svelte.js';
 import { useRealtime } from './realtime.js';
 import type { HTTPMethod, Params, TransportResponse, TransportConfig } from './types/index.js';
 import type { Comet, StoreListener, InternalTransportType } from './types/internal.js';
 
-
 const loading = useEvents<boolean>('loading');
+
 let config: TransportConfig = {
 	BASE_URL: '',
 	DEBUG: false,
@@ -28,7 +28,8 @@ const withFetch = async (
 	method: HTTPMethod,
 	params: Params | undefined = undefined,
 ): Promise<TransportResponse> => {
-	if (!networkStatus.isOnline) {
+	if (!networkStatus.isOnline()) {
+		networkStatus.qeueuRefresh();
 		return Promise.resolve({ error: 'You seem to be offline :)', status: 500 });
 	}
 	const { BASE_URL, init } = config;
@@ -80,7 +81,7 @@ const withFetch = async (
 
 
 const Transport: InternalTransportType = {
-	isOnline: false,
+	isOnline: () => false,
 	cometListeners: {},
 	config,
 	configure(_config: Partial<TransportConfig>) {

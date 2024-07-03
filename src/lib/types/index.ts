@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type NetworkStatus from "$lib/components/network-status.svelte";
 import type { Fetch, WithID } from "./internal.js";
 import type { ComponentType } from "svelte";
 
@@ -54,7 +55,6 @@ export type StoreResult<T> = {
     pages: number;
     page: number;
     limit?: number;
-    length:number;
     loading?: boolean;
     error?: string | null | undefined;
 }
@@ -104,7 +104,7 @@ export type TransportConfig = {
 }
 
 export type TransportType = {
-    isOnline: boolean;
+    isOnline: () => void;
     configure: (_config: Partial<TransportConfig>) => void;
     upload: (url: string, body: Params) => Promise<TransportResponse>;
     get: (url: string, params?: Params) => Promise<TransportResponse>;

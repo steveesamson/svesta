@@ -11,6 +11,7 @@ import type {
 } from './types/index.js';
 
 import type { Comet, WithID } from './types/internal.js';
+import { networkStatus } from './network-status.svelte.js';
 
 type GetStore<T> = {
 	name: string;
@@ -52,7 +53,8 @@ const getStore = <T extends WithID>(
 		searchTerm = '',
 		insync = initData.length > 0,
 		infinite = false,
-		page = 1;
+		page = 1,
+		isOnline = networkStatus.isOnline();
 
 	const storeName = name,
 		listeners: Params = {},
@@ -63,6 +65,7 @@ const getStore = <T extends WithID>(
 	};
 	const search = (s: string) =>
 		debounce(() => {
+			if(!isOnline) return;
 			insync = false;
 			offset = 0;
 			page = 1;
@@ -72,6 +75,7 @@ const getStore = <T extends WithID>(
 		}, 500)();
 
 	const filter = (q: Partial<T>) => {
+		if(!isOnline) return;
 		insync = false;
 		offset = 0;
 		page = 1;
@@ -80,6 +84,7 @@ const getStore = <T extends WithID>(
 	};
 
 	const next = async (): Promise<void> => {
+		if(!isOnline) return;
 		const { recordCount, page:curPage } = store;
 		const nextPage = curPage + 1;
 		const _offset = (nextPage - 1) * LIMIT;
@@ -98,6 +103,7 @@ const getStore = <T extends WithID>(
 		}
 	};
 	const prev = async (): Promise<void> => {
+		if(!isOnline) return;
 		const { recordCount, page:curPage } = store;
 		const nextPage = curPage - 1;
 		const _offset = (nextPage - 1) * LIMIT;
@@ -116,6 +122,7 @@ const getStore = <T extends WithID>(
 		}
 	};
 	const pageTo = async (nextPage: number): Promise<void> => {
+		if(!isOnline) return;
 		const _offset = (nextPage - 1) * LIMIT;
 		const { recordCount } = store;
 		if (_offset >= recordCount) {
@@ -137,6 +144,8 @@ const getStore = <T extends WithID>(
 		if (!insync) {
 			return console.log('Store not prefetched!');
 		}
+		if(!isOnline) return;
+
 		const _offset = page * LIMIT;
 		const { recordCount, loading } = store;
 		if (_offset >= recordCount || loading) {
@@ -255,6 +264,7 @@ const getStore = <T extends WithID>(
 		if (initData) {
 			return mutateMany(initData);
 		}
+		if(!isOnline) return;
 		if (insync) return;
 		const qry = prepQuery();
 		isLoading(true);
@@ -380,6 +390,11 @@ const getStore = <T extends WithID>(
 	if (realTime) {
 		startListening();
 	}
+
+	networkStatus.onChange((state:boolean) =>{
+		isOnline = state;
+		// store.error = '';
+	});
 
 	return {
 		get result(){

@@ -1,6 +1,7 @@
 <script>
 	import { base } from '$app/paths';
 	import { page } from '$app/stores';
+	import NetworkStatus from "$lib/components/network-status.svelte";
 	// import { version } from "../../package.json";
 	const { children } = $props();
 	let path = $page.route.id;
@@ -18,6 +19,9 @@
 	</nav>
 </header>
 <main>
+	<NetworkStatus>
+		<p>You're offline.</p>
+	</NetworkStatus>
 	{@render children()}
 </main>
 
@@ -29,7 +33,7 @@
 	nav {
 		display: flex;
 		align-items: center;
-		padding: 0.5rem 3rem;
+		padding: 0.5rem 1rem;
 	}
 	nav a {
 		color: #142f49;
@@ -42,14 +46,14 @@
 		text-decoration: underline;
 	}
 	nav a:first-of-type {
-		margin-inline-start: auto;
+		margin-inline-start: 1rem;
 	}
 	nav a:last-of-type {
-		margin-inline-start: 0.5rem;
+		margin-inline-start: 1rem;
 	}
 
 	nav div strong {
-		font-size: 3em;
+		font-size: 2em;
 		font-weight: 700;
 		color: #142f49;
 	}
@@ -60,15 +64,17 @@
 	}
 	:global(body) {
 		/* background-color: #cbced5; */
-		text-align: center;
 		padding: 0;
 		margin: 0;
 		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+		background-color: #EFEFEF;
+		width:100%;
+		text-align: center;
 	}
 	:global(pre) {
 		padding: 1.5rem;
 		margin-block: 1.5rem;
-		margin-inline: 1rem;
+		/* margin-inline: 1rem; */
 		max-inline-size: 100%;
 		border-radius: 8px;
 		tab-size: 2;
@@ -77,11 +83,29 @@
 	nav,
 	main {
 		margin-inline: auto;
-		width: min(100%, 50em);
+		width: 100%;
 		text-align: left;
 	}
 	main {
-		padding-block: 2rem;
+		position: relative;
+		padding-block: 1rem;
+	
+	}
+
+	@media screen and (min-width: 600px) {
+		main, 
+		nav {
+			width: min(100%, 60em);
+		}
+		nav {
+			padding: 0.5rem 3rem;
+		}
+		nav div strong {
+			font-size: 3em;
+		}
+		nav a:first-of-type {
+			margin-inline-start: auto;
+		}
 	}
 	:global(p),
 	:global(li) {
@@ -99,6 +123,6 @@
 	:global(h1),
 	:global(h2),
 	:global(h3) {
-		margin-block-start: 4rem;
+		margin-block-start: 3rem;
 	}
 </style>

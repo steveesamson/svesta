@@ -29,7 +29,7 @@ export type StoreListenerList = {
 export type Fetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
 export type InternalTransportType = {
-    isOnline: boolean;
+    isOnline: () => void;
     cometListeners: StoreListenerList;
     config: TransportConfig;
     destroy: () => void;

@@ -9,6 +9,7 @@
 		resolve: Snippet<[StoreResult<T>]>;	
 		store:IStore<T>;
 	}>();
+
 </script>
 
 {#if store && store.result}
