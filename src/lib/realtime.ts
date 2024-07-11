@@ -1,15 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Params, TransportType, HTTPMethod } from './types/index.js';
+import { network } from './network.svelte.js';
+import type { Params, HTTPMethod } from './types/index.js';
+import type { InternalTransportType } from './types/internal.js';
 
-export const useRealtime = async (Transport: TransportType) => {
+export const useRealtime = async (transport: InternalTransportType) => {
     try {
         const ioClient = await import('socket.io-client');
         const { io } = ioClient;
-        const { BASE_URL, DEBUG } = Transport.config;
+        const { BASE_URL, DEBUG } = transport.config;
 
         const socket = io(`${BASE_URL}`, { transports: ['websocket'] }); //['polling','websocket'];
+
         socket.on('connect', function () {
-            Transport.sync = function (url: string, method: HTTPMethod, data?: Params) {
+
+            transport.sync = function (url: string, method: HTTPMethod, data?: Params) {
+                if (!network.status.online) {
+                    network.qeueuRefresh();
+                    return Promise.resolve({ error: 'You seem to be offline :)', status: 404 });
+                }
                 return new Promise((resolve) => {
                     try {
                         socket.emit(method, { path: url, data }, (m: Params) => {
@@ -30,7 +38,7 @@ export const useRealtime = async (Transport: TransportType) => {
                 });
             };
         });
-        socket.on('comets', Transport.onComets);
+        socket.on('comets', transport.onComets);
         return socket;
     } catch (err) {
         console.log('RealTime initialization error: ', err);

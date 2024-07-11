@@ -1,8 +1,8 @@
 <script lang="ts">
-	export let avatar: string = '';
-	export let first_name: string = '';
-	export let last_name: string = '';
-	export let email: string = '';
+	import type { User } from "./types.js";
+
+	let { avatar, first_name, last_name, email }:User = $props();
+
 </script>
 
 <li class="directory">

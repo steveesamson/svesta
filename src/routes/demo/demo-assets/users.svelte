@@ -1,15 +1,22 @@
 <script lang="ts">
 	import type { User } from './types.js';
+	import Item from './item.svelte';
 
-	export let users: User[];
+	let { users } = $props<{ users:User[] }>();
+	
 </script>
 
 <ul class="directories">
-	{#if users}
-		{#each users as user, i}
-			<slot {user} />
+
+	{#if users }
+
+		{#each users as user, i }
+
+			<Item {...user} />
 		{/each}
+
 	{/if}
+
 </ul>
 
 <style>

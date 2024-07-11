@@ -1,247 +1,193 @@
 # svesta
 
-`svesta` - is a tiny `sve`lte `sta`te management library for `svelte/sveltekit`.
+`svesta` - is a tiny `sve`lte `sta`te management library for `svelte/sveltekit`. 
+
+
+[Docs](https://steveesamson.github.io/svesta)
+[Demo](https://steveesamson.github.io/svesta/demo)
+
 
 ## Installation
 
 ```bash
 # In your project directory
 npm install svesta
-```
 
 or
 
-```bash
 # In your project directory
 yarn add svesta
 ```
 
-[Demo and Docs](https://steveesamson.github.io/svesta)
 
-## Usage
+There are 6 major exported components in `svesta`, they are:
 
-Once you've added `svesta` to your project, use it as shown below, in your project:
+- `Transport`: This allows the creation of requests, which starts as `fetch` but could migrate to `WebSocket`, especially, when `Transport` is `configure`d with `{ realTime: true }`.
 
-### +page.svelte (without page.ts for data)
+- `useStore`: The main component of `svesta`. It is responsible for creating reactive stores for providing a `REST`ful interface for any `REST` API while supporting real-time data exchanges.
 
-```ts
-<script lang="ts">
-	import { onMount } from 'svelte';
-	import { type StoreMeta, type StoreProps, type StoreState, Transport, useStore, Resource } from 'svesta';
+- `Resource`: `Resource` is a `svelte` component, which helps manage the network and resolution of promises to notify of `loading`, `errors` or `data` availability on success.
 
-	import { resultTransformer } from './sample/transformer.js';
-	import Users from './sample/users.svelte';
-	import Item from './sample/item.svelte';
-	import type { User } from './sample/types.js';
+- `useEvents`: This allows components exchange informations in a reliable manner, using events.
 
-	let meta: StoreMeta;
+- `network`: `network` allows the determination of network states. It exposed a `status` attribute that helps you do that. For instance, when `network.status.online` is `true => online` and `false => offline`.
 
-    const usersProps:StoreProps<User> = {
-		resultTransformer
-	};
-	const users = useStore<User>('users', usersProps);
+- `Offline`: A `svelte` component, which displays its `children` when `network.status.online` is `false`. It helps in monitoring network activities.
 
-	const handleNext = () => users.pageTo(meta.page + 1);
 
-	const handlePrev = () => users.pageTo(meta.page - 1);
-
-	const onMore = () => users.next();
-	onMount(() => {
-		// Ensure BASE_URL is already set on Transport
-		// It is better done one time inside +layout.ts
-		// instead of inside every view like the following
-		Transport.configure({ BASE_URL: 'https://reqres.in/api'});
-		users.sync();
-	})
-</script>
-```
-
-### +page.svelte (using page.ts for data)
-
-```ts
-<script lang="ts">
-    // from sveltekit
-	import type { PageData } from './$types.js';
-
-	import { type StoreMeta, type StoreProps, type StoreState, useStore, Resource } from 'svesta';
-
-	import { resultTransformer } from './sample/transformer.js';
-	import Users from './sample/users.svelte';
-	import Item from './sample/item.svelte';
-	import type { User } from './sample/types.js';
-
-	export let data: PageData;
-
-	let meta: StoreMeta;
-
-    const usersProps:StoreProps<User> = {
-		initData: data as StoreState<User>,
-		resultTransformer
-	};
-	const users = useStore<User>('users', usersProps);
-
-	const handleNext = () => users.pageTo(meta.page + 1);
-
-	const handlePrev = () => users.pageTo(meta.page - 1);
-
-	const onMore = () => users.next();
-</script>
-```
-
-### +page.ts
-
-```ts
-// from sveltekit
-import type { PageLoad } from './$types.js';
-
-import { Transport } from 'svesta';
-import { resultTransformer } from './sample/transformer.js';
-
-export const load: PageLoad = async ({ fetch }) => {
-	// This is happening on the server and we have a ref to a fetch
-	// implementation, let's use it by passing it to the configure
-	// method of Transport
-	Transport.configure({ BASE_URL: 'https://reqres.in/api', fetch });
-	const { error, ...rest } = await Transport.get('/users');
-	return { ...resultTransformer(rest), error };
-};
-```
-
-```html
-<h1 class="header">Welcome <strong>svesta</strong></h1>
-
-<Resource store="{users}" let:items bind:meta busy="blocked">
-	<Users users="{items}" let:user>
-		<Item {...user} />
-	</Users>
-	{#if meta}
-	<div class="buttons">
-		<button on:click="{handlePrev}" disabled="{meta.page === 1}">Previous page</button>
-		<button on:click="{handleNext}" disabled="{meta.page === meta.pages}">Next page</button>
-		<button on:click="{onMore}" disabled="{meta.page === meta.pages}">
-			more(append to view)...
-		</button>
-	</div>
-	{/if}
-</Resource>
-```
-
-### transformer.js
-
-```ts
-import type { Params } from 'svesta';
-
-export const resultTransformer = (raw: Params = {}) => {
-	const { page, per_page: limit, total: recordCount, total_pages: pages, data } = raw;
-	return { page, limit, recordCount, pages, data };
-};
-```
-
-### types.ts
-
-```ts
-export type User = {
-	id: number;
-	email: string;
-	first_name: string;
-	last_name: string;
-	avatar: string;
-};
-```
-
-### users.svelte
-
-```ts
-<script lang="ts">
-	import type { User } from './types.js';
-	export let users: User[];
-</script>
-```
-
-```html
-<ul class="directories">
-	{#if users} {#each users as user, i}
-	<slot {user} />
-	{/each} {/if}
-</ul>
-```
-
-### item.svelte
-
-```ts
-<script lang="ts">
-	export let avatar: string = '';
-	export let first_name: string = '';
-	export let last_name: string = '';
-	export let email: string = '';
-</script>
-```
-
-```html
-<li class="directory">
-	<div class="image">
-		<img src="{avatar}" alt="user avatar" loading="lazy" />
-	</div>
-	<div class="detail">
-		<strong>{first_name} {last_name}</strong>
-		<em>{email}</em>
-	</div>
-</li>
-```
-
-There are 5 major exported components in `svesta`, they are:
-
-- `Transport`: A proxy for `fetch`, which starts as `fetch` but could migrate to `WebSocket`, especially, when using `useStore` with `Transport` `configure`d with `{ realTime: true }`.
-- `useStore`: The main component of `svesta`. It is responsible for providing a `REST`ful interface for any `REST` API while supporting real-time data exchanges.
-- `useEvents`: A `svelte store` that allows views exchange informations in a reliable manner.
-- `networkStatus`: Another `svelte store` that allows the determination of network states like `true = online` and `false = offline`.
-- `Resource`: A `svelte` component, which helps manage the network and resolution of promises to notify of `loading`, `errors` or `data` availability on success.
 
 Let us examine each component in detail.
 
 ### 1. Transport
 
-`Transport` is useful in requesting any arbitrary HTTP(S) endpoint. `Transport` exposes a `configure` method that allows the customization of HTTP(S) requests. Such customization could be achieved as below:
+`Transport` is useful in requesting any arbitrary HTTP(S) endpoint. `Transport` exposes 2 methods, `configure` and `instance`:
+- `configure`: It allows the customization of HTTP(S) requests. Such customization could be achieved as below, especially in your `+layout.[t|j]s`:
 
 ```ts
+
 import { type TransportConfig, Transport } from 'svesta';
+
 const configOptions:TransportConfig = {
     // Log out details or not. Default is false.
-    DEBUG: true;
+    DEBUG: true,
     // Set the base URL. Default is ''.
-    BASE_URL: 'https://some-base-url';
+    BASE_URL: 'https://some-base-url',
     // External fetch implementation could be passed.
     // Default is undefined.
     // Either window.fetch or fetch from
     // +page.[t|j]s' onload as shown in our example.
-    fetch: window.fetch;
+    fetch: window.fetch,
     // Allow or disallow migration to web socket.
     // Default is false.
-    realTime: false;
+    realTime: false,
     // Allows the override of the base fetch RequestInit.
     // Default is undefined.
-    init: RequestInit;
+    init: RequestInit,
+	// If you do not want the transport to be a top-level(default)
+	// one, tag it with a context
+	// This allows you have multiple transport instances.
+	context: 'news', // This is used in accessing the instance later
 
 };
+
 Transport.configure(configOptions);
+
+```
+
+> Best practices favors doing all your Transport configuration in the `+layout.[t|j]s` in a manageable way. While `Transport.configure` could be done within your view's `$effect` or in your `+page.[j|t]s`, the recommended place to do the setupu is the `+layout.[j|t]s` like below: 
+
+
+#### In +layout.ts
+
+```ts
+
+import { Transport } from "svesta";
+
+// This is configured on the default context
+Transport.configure({ BASE_URL: 'https://reqres.in/api' });
+
+export const prerender = true;
+
+```
+
+- `instance`: By default, `Transport` creates a `default` instance, which gets returned when no argument is passed to `instance`. If you do not want the transport to be a top-level(default) one, tag it with a context. This allows you have multiple transport instances. The field is also used in accessing the instance later. `instance` accepts either a `TransportInstanceProps` type.
+
+```ts
+
+import { Transport } from 'svesta';
+// Just for news, as configured above
+const newsTransport = Transport.instance('news');
+
+```
+#### In +page.[t|j]s
+Transport `instance` plays well with `+page.[t|j]s` allowing us to specify what `fetch` to use.
+
+##### Default context
+
+```ts
+// from sveltekit
+import { Transport } from 'svesta';
+import type { PageLoad } from './$types.js';
+import { resultTransformer } from '..';
+
+export const load:PageLoad = async ({ fetch }) => {
+
+	// This is happening on the server and we have a ref to a fetch
+	// implementation, let's use it by passing it to the configure
+	// method of Transport
+	
+	//Default transport
+	const transport  = Transport.instance({fetch});
+
+	const { error , ...rest } = await transport.get('/users');
+
+	return { ...resultTransformer(rest), error };
+
+};
+```
+
+##### News context
+```ts
+// from sveltekit
+import { Transport } from 'svesta';
+import type { PageLoad } from './$types.js';
+import { resultTransformer } from '..';
+
+export const load:PageLoad = async ({ fetch }) => {
+
+	// This is happening on the server and we have a ref to a fetch
+	// implementation, let's use it by passing it to the configure
+	// method of Transport
+	
+
+	// Scoped only for news
+	// Must have been configured too
+	const transport  = Transport.instance({context:'news', fetch});
+
+	const { error , ...rest } = await transport.get('/users');
+
+	return { ...resultTransformer(rest), error };
+
+};
 ```
 
 `Transport` competently handles `GET`, `POST`, `PUT`, `PATCH`, `OPTIONS` and `DELETE` HTTP methods via the exposed methods: `.get`, `.post`, `.put`, `.patch`, `.delete`, `.options` and `.upload`. An example could look like the following:
 
 ```ts
-const { error, data } = await Trasport.post('/users', { name: 'Name', address: 'Some address' });
+// Using the default instance
+const { error, data } = await Trasport.instance().post(
+	'/users', 
+	{ name: 'Name', address: 'Some address' }
+);
+
 ```
 
-`Transport` also exposes an `isOnline` field indicative of whether network connection is available or not. This field changes with every network changes.
+```ts
 
-### 2. useStore
+// Using some context(news) instance
+const newsTransport = Transport.instance("news");
+const { error, data } = await newsTransport.post(
+	'/users', 
+	{ name: 'Name', address: 'Some address' }
+);
+
+```
+> Note that you must have configured the `news` transport `context` before using it like so:
+
+```ts
+Transport.configure({context:'news',....});
+```
+
+`Transport` also exposes a `loading`, which actually, is a field indicative of whether an active request is happening.
+
+### 3. useStore
 
 If the target of requests are `REST`ful APIs, then the appropriate component from `svesta` is the `useStore`. `useStore` defines 2 parameters:
 
-- `resourceName`: This is a `string` that represents the name (not path please) of REST resource. This is required.
+- `resourceName`: This is a `string` that represents the name or path of REST resource. This is required.
 - `storeOption`: This is a `StoreProps<T>`, explained in detail below. This is optional.
 
-> Note: `useStore` uses `Transport` under the hood, therefore, configurations set on `Transport` also affect `useStore`.
+> Note: `useStore` uses `Transport` under the hood, therefore, configurations set on `Transport.configure` also affect `useStore`.
 
 ```ts
 import { type StoreProps, useStore } from 'svesta';
@@ -258,7 +204,8 @@ const usersProps: StoreProps<User> = {
 	// That is profile is not known to you system but 'users'
 	// namespace defaults to ''.
 	namespace: '',
-	// You can pre-populate a store by passing `initData`.
+	// You can pre-populate a store by passing `initData` 
+	// of StoreState<T> type
 	// It defaults to {}
 	initData: {},
 	// includes helps control what fields are returned
@@ -270,7 +217,7 @@ const usersProps: StoreProps<User> = {
 	// in multiple resources(join).
 	// It defaults to ''.
 	includes: '',
-	// resultTransformer is a function you can pass
+	// resultTransformer is a StoreResultTransformer type, a function you can pass
 	// to intercept and convert the data from your API to what
 	// `useStore` understands, the StoreState type.
 	// This is important when using the `.sync` method of store
@@ -279,15 +226,18 @@ const usersProps: StoreProps<User> = {
 	// returns the transformed data. See transformer.js above.
 	// It defaults to undefined
 	resultTransformer: undefined,
-	// queryTransformer is a function you can pass
+	// queryTransformer is a StoreQueryTransformer type, a function you can pass
 	// to intercept and convert your query to what your API expects.
 	// This is important when using the `.sync` method of store
 	// to synchronize/fetch data from your APIs.
 	// It accepts the raw query and
 	// returns the transformed query for your API.
 	// It defaults to undefined
-	queryTransformer: undefined
+	queryTransformer: undefined,
+	//Specifies transport context
+	transportContext: undefined
 };
+
 // Let's create a users store
 const users = useStore(
 	// resource name, not path please. Required
@@ -296,12 +246,12 @@ const users = useStore(
 	usersProps
 );
 
-// Of all the store arguments, the `resource name` is mandatory
+// Of all the store arguments, the `resource name/path` is mandatory
 // StoreProps is optional and could be omitted, for instance:
 const people = useStore('users');
 ```
 
-`useStore` maintains its internally structure as a `StoreState<T>`. In our example above, `T` is `User`. The structure as as shown below:
+`useStore` maintains its internal structure as a `StoreState<T>`. In our example above, `T` is `User`. The structure as as shown below:
 
 ```ts
 type StoreState<T> = {
@@ -321,6 +271,7 @@ type StoreState<T> = {
 	error?: string | null | undefined;
 	// Params that produced result or error
 	params?: Params;
+	transportContext?:string;
 };
 ```
 
@@ -334,17 +285,12 @@ type IngressType = {
 	total_pages: numbers;
 	data: unknow;
 };
-
-export const resultTransformer = (raw: Params = {}) => {
-	const { page, per_page: limit, total: recordCount, total_pages: pages, data } = raw;
-	return { page, limit, recordCount, pages, data };
-};
 ```
 
 However, `useStore` cannot store data like this, hence, the need to implement a result transformer to convert as below:
 
 ```ts
-export const resultTransformer = (raw: Params = {}) => {
+export const resultTransformer = <User>(raw: IngressType): StoreResult<User> => {
 	// raw is what comes from regres.in
 	const { page, per_page: limit, total: recordCount, total_pages: pages, data } = raw;
 	// return what conforms to StoreState
@@ -352,8 +298,39 @@ export const resultTransformer = (raw: Params = {}) => {
 };
 ```
 
-`useStore` exposes the following methods:
+`useStore` exposes `result`, which is a state object comprising of:
+- `loading`: A `boolean` indicative of on-going network request or not.
+- `error`: A `string` that is non-empty whenever `store` request resolves with some error.
+- `data`: An object of type `T[]` representing the data from API when store request resolves with no `error`.
 
+
+```ts
+
+import { useStore } from 'svesta';
+
+const { sync, result: { loading, data, error } } = useStore("users");
+$effect(() =>{
+	sync();
+});
+
+```
+
+```html
+	<header>Users</header>
+	{#if loading}
+		<p>Loading users...</p>
+	{/if}
+	{#if !!error}
+		<p>Error:{error}</p>
+	{/if}
+	{#if data }
+		{#each users as user}
+			<p>Name: {user.first_name} {user.last_name} </p>
+		{/each}
+	{/if}
+```
+
+`useStore` exposes the following methods:
 - `.sync`: This synchronizes the store by fetching the first page from the resource. This could also be used to pre-populate the store by passing data. This is typically a `GET` scoped to the resource only. When this executes, it populates the store and notifies all views depending on the store for appropriate view updates.
   > This is asynchronous, therefore, if you need the population before something else, you must `await` its call.
 
@@ -369,41 +346,62 @@ accounts.sync();
 accounts.sync(initData)
 ```
 
-- `.pageTo`: This synchronizes the store by fetching the `next/previous` page from the resource depending on `page` passed. This is typically a `GET` scoped to the resource only. When this executes, it populates the store and notifies all views depending on the store for appropriate view updates.
+- `.next`: This synchronizes the store by fetching the `next` page from the resource depending. This is typically a `GET` scoped to the resource only. When this executes, it populates the store and notifies all views depending on the store for appropriate view updates.
   > This is asynchronous, therefore, if you need the population before something else, you must `await` its call. Important to note also is that previous store data are replaced by the new result.
 
-```ts
-import { useStore, Resource, type StoreMeta } from 'svesta';
-import type Account from '...';
-
-let meta: StoreMeta;
-const accounts = useStore<Account>('accounts',...);
-const onNext = () => accounts.pageTo(meta.page + 1);
-const onPrev = () => accounts.pageTo(meta.page - 1);
-const onMore = () => accounts.next();
-```
-
-```html
-<Resource store="{accounts}" let:items bind:meta busy="blocked">
-	{#each items as account}
-	<Item {...account} />
-	{/each} {#if meta}
-	<div class="buttons">
-		<button on:click="{onPrev}" disabled="{meta.page === 1}">Previous page</button>
-		<button on:click="{onNext}" disabled="{meta.page === meta.pages}">Next page</button>
-		<button on:click="{onMore}" disabled="{meta.page === meta.pages}">
-			more(append to view)...
-		</button>
-	</div>
-	{/if}
-</Resource>
-```
-
-- `.paginate`: This synchronizes the store by fetching the `next/previous` page from the resource depending on `offset` passed. This work with offsets. This is typically a `GET` scoped to the resource only. When this executes, it populates the store and notifies all views depending on the store for appropriate view updates.
+- `.prev`: This synchronizes the store by fetching the `previous` page from the resource depending. This is typically a `GET` scoped to the resource only. When this executes, it populates the store and notifies all views depending on the store for appropriate view updates.
   > This is asynchronous, therefore, if you need the population before something else, you must `await` its call. Important to note also is that previous store data are replaced by the new result.
-- `.next`: This synchronizes the store by fetching the `next` page from the resource but rather than replace the store data like in the case of `.pageTo`, it appends result to the existing store data, useful in endless loading. This is typically a `GET` scoped to the resource only. When this executes, it populates the store and notifies all views depending on the store for appropriate view updates.
+
+- `.more`: This synchronizes the store by fetching `more` pages from the resource but rather than replace the store data like in the case of `.next` or `.prev`, it appends result to the existing store data, useful in endless loading. This is typically a `GET` scoped to the resource only. When this executes, it populates the store and notifies all views depending on the store for appropriate view updates.
 
   > This is asynchronous, therefore, if you need the population before something else, you must `await` its call. Important to note also is that the new result is added/appended to the previous store data not replaced.
+```ts
+import { useStore, Resource, type StoreResult } from 'svesta';
+import type Account from '...';
+
+const accounts = useStore<Account>('accounts',...);
+const onNext = () => accounts.next();
+const onPrev = () => accounts.prev();
+const onMore = () => accounts.more();
+```
+Using `Resource`(we'll explain next), we can have the following:
+```html
+
+{#snippet resolve({ loading, data, error, page, pages }:StoreResult<Account>)}
+	
+	{#if data}
+		<AccountList users={data} />
+		<div class="buttons">
+
+			<button onclick={ handlePrev } disabled={ page === 1 }> 
+				Previous page
+			</button>
+			<button onclick={ handleNext } disabled={ page === pages }> 
+				Next page
+			</button>
+			<button onclick={ onMore } disabled={ page === pages }>
+				More(append to view)...
+			</button>
+			
+		</div>
+	{/if}
+
+	{#if loading}
+		<p class='spinner'>Fetching data...</p>
+	{if}
+	{#if error}
+		<p class='danger'>Error: {error}</p>
+	{if}
+	
+{/snippet}
+
+<Resource store={accounts} {resolve} />
+
+```
+
+- `.pageTo`: This synchronizes the store by fetching the `next/previous` page from the resource depending on `offset` passed. This work with offsets. This is typically a `GET` scoped to the resource only. When this executes, it populates the store and notifies all views depending on the store for appropriate view updates.
+  > This is asynchronous, therefore, if you need the population before something else, you must `await` its call. Important to note also is that previous store data are replaced by the new result.
+
 
 - `.save`: This does a scoped `POST` or `PUT` based on resource. For new data, i.e, data without `id`, it does `POST` otherwise, it does a `PUT`. When this executes, it updates the store and notifies all views depending on the store for appropriate view updates. It returns a `Promise<TransportResponse<T>>`.
   > This is asynchronous, therefore, if you need the saving before something else, you must `await` its call.
@@ -434,7 +432,12 @@ const accounts = useStore<Account>('accounts',...);
 accounts.destroy({id:12345678});
 
 // Fire and inspect
-const { error, message, data, status } = await accounts.destroy({id:12345678});
+const { 
+	error, 
+	message, 
+	data, 
+	status 
+	} = await accounts.destroy({id:12345678});
 // Do something with fields
 
 ```
@@ -454,12 +457,12 @@ accounts.search('google');
 - `.get`: This does a scoped `GET` based on resource but appends the passed `path` to resource `url`. When this executes, it does not updates the store. It returns a `Promise<TransportResponse<T>>`.
 
 ```ts
-import { onMount } from 'svelte';
+
 import { useStore } from 'svesta';
 import type Account from '...';
 
 const accounts = useStore<Account>('accounts',...);
-onMount(async () =>{
+$effect(async () => {
     // The following will make a GET request to `/accounts/checking`
     // path using the passed params
     const { data, error} = await accounts.get('/checking',{...});
@@ -469,12 +472,11 @@ onMount(async () =>{
 - `.post`: This does a scoped `POST` based on resource but appends the passed `path` to resource `url`. When this executes, it does not updates the store. It returns a `Promise<TransportResponse<T>>`.
 
 ```ts
-import { onMount } from 'svelte';
 import { useStore } from 'svesta';
 import type Account from '...';
 
 const accounts = useStore<Account>('accounts',...);
-onMount(async () =>{
+$effect(async () => {
     // The following will make a request to POST `/accounts/checking`
     // path using the passed params
     const { data, error} = await accounts.post('/checking',{...});
@@ -521,13 +523,14 @@ const onAccountUpdate:EventHandler = (account:Account) =>{
 accounts.on('update',onAccountUpdate);
 ```
 
+The following methods of store do not make network requests when used but they propagate changes to the view. They are added for the purpose of prototyping without persistence. These methods are:
 - `.debug`: This logs store info to the console. Useful during dev.
-  The following methods of store do not make network requests when used but they propagate changes to the view. They are added for the purpose of prototyping without persistence. These methods are:
 - `.add`: Add items to store
 - `.remove`: Removes specific item from store
 - `.patch`: Updates specific item in store
 
 ```ts
+
 import { type EventHandler, useStore } from 'svesta';
 import type Account from '...';
 
@@ -537,63 +540,121 @@ const account = {accountName:'Account Name', accountNo:2345566, id:new Date().ge
 accounts.add(account);
 accounts.patch({...account, accountName:'Updated Account Name'});
 accounts.remove(account);
+
 ```
 
 ### 3. Resource
 
-Like mentioned earlier, `Resource`, a `svelte` component, which helps manage the network requests while using `useStore` to manage REST resources. `Resource` also handles resolution of promises and notify of `loading` during an on-going network request, `errors` on events of HTTP errors or `data` availability on success.
+As mentioned earlier, `Resource`, is a `svelte` component, which helps manage the network requests while using `store` to manage REST resources. `Resource` also handles resolution of promises and notify of `result` during an on-going network request, `errors` on events of HTTP `errors` or `data` availability on success.
 
-`Resource` accepts 4 props:
+`Resource` accepts 2 props:
 
-- `store`: An instance of `IStore<T>`, which by all means is a `svelte store`. This prop is required.
-- `LoaderComponent`: This is an object of `SvelteComponentAsProp` type that is used to customize `Resource` loader component:
+- `store`: A type of `Store<T>`, which by all means is an instance of `useStore`. This prop is required.
+- `resolve`: A `svelte runes snippet` of type `Snippet<[StoreResult<T>]>` that get called when `Resource` resolves the `store` passed to it. It is responsible for rendering the data from `store` when store resolves. This prop is required.
 
-```ts
-const loaderComponent: SvelteComponentAsProp = {
-	component: LoaderWithText,
-	props: { text: 'Loading...' }
-};
-```
+See example in demo app.
 
-`component` is of type svelte `ComponentType` while `props` is any object describing all the props of the `component`. `Resource` comes with a default `LoaderComponent` that is used when none is provided.
-
-- `busy`: A string which can be any of `blocked`, `inline`, `silent`. The default is `silent`. `silent` indicates, do nothing while `Resource` is in `loading` state. `inline`, on the other hand, will display a
-  `blocked` indicates that the component be blocked(disabled) for action when `Resource` is in `loading` state. This will typically draw an overlay over the content, displaying the `LoaderComponent`.
-- `meta`: An object of type `StoreMeta` that exposes `page` i.e current page number of `Resource` store and `pages`, i.e total pages in a `Resource` store . It is shaped like:
-
-```ts
-import { type StoreMeta } from 'svesta';
-
-export let meta: StoreMeta = { page: 1, pages: 1 };
-```
-
-Besides these props, `Resource` exposes the following slot props:
-
-- `items`: An array of items in a `Resource` store when `Resource` resolves with no `error`.
-- `loading`: A `boolean` indicative of on-going network request or not.
-- `error`: A `string` that is non-empty whenever `Resource` resolves with some error.
-- `meta`: `meta` was described as a prop but it is also exposed as a `slot` prop.
 
 `Resource` is just a `svelte` component used as below:
 
 ```ts
 // svelte file
-<script lang='ts'>
-import { type StoreMeta, useStore } from 'svesta';
+<script>
+import { useStore, type StoreResult } from 'svesta';
 import type Account from '...';
 
-let meta: StoreMeta;
 const accounts = useStore<Account>('some');
 
+</script>
+
+```
+
+```html
+
+{#snippet resolve({ data, loading, error, page, pages }:StoreResult<Account>)}
+
+	<AccountList users={data} />
+
+	{#if loading}
+
+		<p>Loading data...</p>
+
+	{/if}
+
+	{#if data}
+	<div class="buttons">
+		<button onclick={ accounts.prev } disabled={ page === 1}> 		
+			Previous page
+		</button>
+		<button onclick={ accounts.next } disabled={ page === pages}> 
+			Next page
+		</button>
+		<button onclick={ accounts.more } disabled={ page === pages }>
+			more(append to view)...
+		</button>
+	</div>
+	{/if}
+
+	{#if error}
+
+		<h4>Oh, error?</h4>
+		<p>{error}</p>
+
+	{/if}
+
+{/snippet}
+
+<Resource store={accounts} resolve={resolve} />
+
+```
+
+### 4. useEvents
+`useEvents`: This allows components exchange informations in a reliable manner, using events rather than passing props. For instance, see the following:
+
+```ts
+ import {type UseEvent, useEvents } from "svesta";
+ // Here loading is the scope of the created event
+ const loadEvent: UseEvent<boolean> = useEvents<boolean>('loading');
+ ...
+ ...
+ function start(){
+	loadEvent.data = true;
+ }
+ function done(){
+	loadEvent.data = false;
+ }
+
+```
+In another component, we can track and use the created `loadEvent` like so:
+
+```ts
+<script>
+ import {type UseEvent, useEvents } from "svesta";
+ // Here loading is the scope of the created event
+ const loader: UseEvent<boolean> = useEvents<boolean>('loading');
 </script>
 ```
 
 ```html
-<Resource store="{accounts}" let:items let:loading let:error let:meta bind:meta busy="blocked">
-	<!-- make use of  -->
-</Resource>
+{#if loader.data}
+	<p>Loading...</p>
+{/if}
 ```
 
-# TODO
+### 5. network
+`network` allows the determination of network states. It exposed a `status` attribute that helps you do that. For instance, when `network.status.online` is `true => online` and `false => offline`. This can be used both in view and non-view components. For instance, the `Offline` component was build by using `network`.
 
-At the moment, `Transport.configure` sets an app-wide settings for `svesta`, I love to implement a none-global configuration, a per-need type.
+
+### 6. Offline 
+ This is a `svelte` component, which displays its `children` when `network.status.online` is `false`. It helps in monitoring network activities in view components. The usage as as shown below:
+
+ ```ts
+import { Offline } from 'svesta';
+
+```
+
+```html
+<Offline>
+<p>Content to show when offline.</p>
+</Offline>
+```

@@ -1,9 +1,13 @@
 <script lang="ts">
-	export let size = 18;
-	export let text = 'Loading...';
+	type LoaderProps = {
+		size:number;
+		text:string;
+		color:string;
+	 }
+	let { size = 18, text = 'Loading...', color='#333333' }:LoaderProps = $props();
 </script>
 
-<div class="wrapper">
+<div class="wrapper" style="color:{color};">
 	<svg xmlns="http://www.w3.org/2000/svg" height={size} width={size} viewBox="0 0 100 100">
 		<circle
 			fill="none"
@@ -32,11 +36,22 @@
 
 <style>
 	.wrapper {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		flex-direction: column;
+		gap: 0.25rem;
 		text-align: center;
 		margin-top: 2rem;
 		padding: 1rem;
 		color: inherit;
 		background-color: transparent;
+		z-index: 100;
+	}
+	@media screen and (min-width: 300px){
+		.wrapper {
+			flex-direction: row;
+		}
 	}
 	.text {
 		text-align: center;
