@@ -1,15 +1,6 @@
 <script lang="ts" generics="T">
-	import type { Snippet } from 'svelte';
-	import type { IStore, StoreResult } from '../types/index.js';
-
-	let { 
-		store, 
-		resolve, 
-	} = $props<{
-		resolve: Snippet<[StoreResult<T>]>;	
-		store:IStore<T>;
-	}>();
-
+	import type { ResourceType } from '../types/index.js';
+	let { store, resolve }:ResourceType<T> = $props();
 </script>
 
 {#if store && store.result}

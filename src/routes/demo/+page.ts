@@ -9,8 +9,10 @@ export const load:PageLoad = async ({ fetch }) => {
 	// implementation, let's use it by passing it to the configure
 	// method of Transport
 
-	Transport.configure({ BASE_URL: 'https://reqres.in/api', fetch });
-	const { error , ...rest } = await Transport.get('/users');
+	const transport  = Transport.instance({fetch});
+
+	const { error , ...rest } = await transport.get('/users');
+
 	return { ...resultTransformer(rest), error };
 
 };

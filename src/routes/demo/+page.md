@@ -9,46 +9,77 @@
 <title>Svesta Demo</title>
 <meta property="og:type" content="svesta demo" />
 <meta property="og:title" content="Svesta demo" />
-
 </svelte:head>
 
 <Demo {data}/>
 
 ## Source code for svesta demo
 
+
 ### +layout.ts
+While `Transport` setup could be done within your view's `$effect` or in your `+page.[j|t]s`, the recommended place to do the setup is the `+layout.[j|t]s` like below: 
 
 ```ts
 
-import { Transport } from 'svesta';
-// This is a one-off, available throughtout app.
+import { Transport } from "svesta";
+// This is configured on the default context
 Transport.configure({ BASE_URL: 'https://reqres.in/api' });
+export const prerender = true;
 
 ```
 
-### +page.svelte (no +page.ts)
+### +page.ts
+
+```ts
+
+// from sveltekit
+import type { PageLoad } from './$types.js';
+
+import { Transport } from 'svesta';
+import { resultTransformer } from './demo-assets/transformer.js';
+
+export const load:PageLoad = async ({ fetch }) => {
+
+	// This is happening on the server and we have a ref to a fetch
+	// implementation, let's use it by passing it to the configure
+	// method of Transport
+
+	// Note that we are using the default transport context here
+	const transport  = Transport.instance({fetch});
+	const { error , ...rest } = await transport.get('/users');
+	return { ...resultTransformer(rest), error };
+
+};
+
+```
+
+### +page.svelte
 
 ```ts
 
 <script>
+	// svelte
+	import type { PageData } from './$types.js';
 
 	import { type StoreProps, useStore, Resource, Loader, type StoreResult } from 'svesta';
 	import { resultTransformer } from "./demo-assets/transformer.js";
 
 	import UserList from './demo-assets/users.svelte';
-	import type { User } from './demo-assets/types.js';
+	import type { User, IngressType } from './demo-assets/types.js';
+
+	type ViewData = { data: PageData; }
+	const { data }: ViewData = $props();
 
 	const usersProps: StoreProps<User> = {
 		resultTransformer,
-		queryTransformer: (raw: Params) => {
+		initData: data as StoreState<User>,
+		queryTransformer(raw:IngressType){
 			return raw;  
 		}
 	};
 	const users = useStore<User>( 'users', usersProps );
 
-	$effect(() => {
-		users.sync();
-	});
+	
 	
 </script>
 
@@ -97,10 +128,10 @@ Transport.configure({ BASE_URL: 'https://reqres.in/api' });
 ### transformer.js
 
 ```ts
+import { type StoreResult } from 'svesta';
+import type { IngressType, User } from './demo-assets/types.js';
 
-import type { Params } from 'svesta';
-
-export const resultTransformer = (raw: Params = {}) => {
+export const resultTransformer = <User>(raw: IngressType): StoreResult<User> => {
 	const { page, per_page: limit, total: recordCount, total_pages: pages, data } = raw;
 	return { page, limit, recordCount, pages, data };
 };
@@ -119,6 +150,14 @@ export type User = {
 	avatar: string;
 };
 
+export type IngressType = {
+	page: number;
+	per_page: number;
+	total: number;
+	total_pages: number;
+	data: Params;
+};
+
 ```
 
 ### users.svelte
@@ -130,7 +169,7 @@ export type User = {
 	import type { User } from './types.js';
 	import Item from './item.svelte';
 
-	let { users } = $props<{ users:User[] }>();
+	let { users }:{ users:User[] } = $props();
 
 </script>
 
@@ -159,7 +198,7 @@ export type User = {
 <script>
 	import type { User } from "./types.js";
 
-	let { avatar, first_name, last_name, email } = $props<User>();
+	let { avatar, first_name, last_name, email }:User = $props();
 </script>
 
 ```

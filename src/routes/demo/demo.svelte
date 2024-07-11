@@ -1,22 +1,23 @@
 <script lang="ts">
-	import type { Params, StoreResult, StoreProps, StoreState } from '$lib/types/index.js';
+	import type { StoreResult, StoreProps, StoreState } from '$lib/types/index.js';
 	import { useStore } from '$lib/store.svelte.js';
 	import { resultTransformer } from "./demo-assets/transformer.js";
 	import Loader from '$lib/components/block-loader.svelte';
 	import Resource from '$lib/components/resource.svelte';
 	import UserList from './demo-assets/users.svelte';
-	import type { User } from './demo-assets/types.js';
-
-	const { data } = $props<{ data: StoreState<User> }>();
+	import type { IngressType, User } from './demo-assets/types.js';
+	
+	type ViewData = { data: StoreState<User>; }
+	const { data }: ViewData = $props();
 
 	const usersProps: StoreProps<User> = {
 		resultTransformer,
 		initData: data,
-		queryTransformer: (raw: Params) => {
+		queryTransformer(raw:IngressType){
 			return raw;  
 		}
 	};
-	const users = useStore<User>( 'users', usersProps );
+	const users = useStore<User>( '/users', usersProps );
 	
 
 </script>
@@ -52,12 +53,13 @@
 <h1 class="header">
 	<strong>Svesta</strong> Demo
 </h1>
-
-<Resource store={users} { resolve }/>
+<section>
+	<Resource store={users} { resolve }/>
+</section>
 
 <style>
 	.header {
-		padding: 1rem;
+		padding: 1rem 0;
 	}
 	.buttons {
 		text-align: center;

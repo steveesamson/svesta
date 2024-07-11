@@ -1,8 +1,5 @@
-type TNetworkStatus = {
-	isOnline: () => boolean;
-	qeueuRefresh: () => void;
-	onChange:(fn:(state:boolean) => void) => void;
-};
+import type { Network, NetworkStatus } from "./types/index.js";
+
 
 const NetworkState =  {
 	KEY:"NetworkState",
@@ -14,34 +11,26 @@ const NetworkState =  {
 		if(typeof window === 'undefined') return true;
 		const state = sessionStorage.getItem(NetworkState.KEY);
 		return state? state === 'true' :  false; 
-		
 	}
 }
 
-let status = $state<boolean>(NetworkState.restore());
+const _status = $state<NetworkStatus>({ online: NetworkState.restore() });
+
 let refresh = $state<boolean>(false);
-const onChangeListeners:((state:boolean) => void)[] = [];
 
 const updateConnectionStatus = () => {
 	if (navigator.onLine) {
 		console.log('online');
-		status = true;
+		_status.online = true;
 		NetworkState.save("true")
 		if(refresh){
 			location.reload();
-		}else{
-			for(const action of onChangeListeners){
-				action(status);
-			}
 		}
 		
 	} else {
 		console.log('offline');
-		status = false;
+		_status.online = false;
 		NetworkState.save("false");
-		for(const action of onChangeListeners){
-			action(status);
-		}
 	}
 };
 
@@ -49,21 +38,18 @@ const start = () =>{
 	if(typeof window === 'undefined') return;
 	window.addEventListener('online', updateConnectionStatus);
 	window.addEventListener('offline', updateConnectionStatus);
-	if(!status){
+	if(!_status.online){
 		updateConnectionStatus();
 	}
 }
 
 start();
 
-export const networkStatus: TNetworkStatus = {
-	isOnline() {
-		return status;
+export const network: Network = {
+	get status() {
+		return _status;
 	},
 	qeueuRefresh(){
 		refresh = true;
-	},
-	onChange(fn:(state:boolean) => void){
-		onChangeListeners.push(fn);
 	}
 };

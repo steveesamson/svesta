@@ -1,5 +1,10 @@
 <script lang="ts">
-	let { size = 18, text = 'Loading...', color='#333333' } = $props();
+	type LoaderProps = {
+		size:number;
+		text:string;
+		color:string;
+	 }
+	let { size = 18, text = 'Loading...', color='#333333' }:LoaderProps = $props();
 </script>
 
 <div class="wrapper" style="color:{color};">

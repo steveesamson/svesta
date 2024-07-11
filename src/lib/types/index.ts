@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type NetworkStatus from "$lib/components/network-status.svelte";
-import type { Fetch, WithID } from "./internal.js";
-import type { ComponentType } from "svelte";
+// import type NetworkStatus from "$lib/components/network-status.svelte";
+import type { Snippet } from "svelte";
+import type { Fetch, InternalTransportType, WithID } from "./internal.js";
+// import type { ComponentType } from "svelte";
 
 export type HTTPMethod =
     | 'GET'
@@ -22,10 +23,6 @@ export type HTTPMethod =
 
 export type Order = 'asc' | 'desc' | string;
 
-export type SvelteComponentAsProp = {
-    component: ComponentType;
-    props: Params;
-}
 export type Params<T = any> = {
     [key: string]: T;
 };
@@ -42,12 +39,6 @@ export type TransportResponse<T = unknown> = {
     status: number;
     message?: string;
 };
-
-export type ResolveSnippet<T> = (to:StoreResult<T>) => void;
-
-/**
- * page, limit, recordCount, pages, data
- */
 
 export type StoreResult<T> = {
     data: T[];
@@ -69,9 +60,10 @@ export type StoreState<T> = {
     params?: Params;
 }
 export type StoreEvent = 'refresh' | 'create' | 'destroy' | 'update';
-export type StoreTransformer = (response: Params) => Params;
+export type StoreResultTransformer = <T>(response: any) => StoreResult<T>;
+export type StoreQueryTransformer = (response: any) => Params;
 
-export interface IStore<T> {
+export interface Store<T> {
     result: StoreResult<T>;
     sync: (init?: StoreState<T>) => void;
     more: () => void;
@@ -80,11 +72,11 @@ export interface IStore<T> {
     prev: () => void;
     on: (event: StoreEvent, handler: EventHandler) => void;
     search: (searchTerm: string) => void;
-    destroy: (where: WithID) => Promise<TransportResponse>;
-    save: (delta: T) => Promise<TransportResponse>;
+    destroy: (where: WithID) => Promise<TransportResponse<T>>;
+    save: (delta: T) => Promise<TransportResponse<T>>;
     find: (value: any, key: string) => Promise<T | undefined>;
-    post: (path: string, params: Params) => Promise<TransportResponse>;
-    get: (path: string, params: Params) => Promise<TransportResponse>;
+    post: <K = Params>(path: string, params: Params) => Promise<TransportResponse<K>>;
+    get: <K = Params>(path: string, params: Params) => Promise<TransportResponse<K>>;
     despace: (data: Params) => Promise<TransportResponse>;
     upload: (file: Params) => Promise<TransportResponse>;
     // paginate: (offset: number) => Promise<void>;
@@ -96,23 +88,33 @@ export interface IStore<T> {
 }
 
 export type TransportConfig = {
-    DEBUG: boolean;
     BASE_URL: string;
-    fetch: Fetch | undefined;
-    realTime: boolean;
-    init: RequestInit;
+    fetch?: Fetch;
+    DEBUG?: boolean;
+    context?: string;
+    realTime?: boolean;
+    init?: RequestInit;
 }
 
+
 export type TransportType = {
-    isOnline: () => void;
-    configure: (_config: Partial<TransportConfig>) => void;
-    upload: (url: string, body: Params) => Promise<TransportResponse>;
-    get: (url: string, params?: Params) => Promise<TransportResponse>;
-    delete: (url: string, params?: Params) => Promise<TransportResponse>;
-    post: (url: string, body: Params) => Promise<TransportResponse>;
-    put: (url: string, body: Params) => Promise<TransportResponse>;
-    patch: (url: string, body: Params) => Promise<TransportResponse>;
+    status: NetworkStatus;
+    upload: <T = Params>(url: string, body: Params) => Promise<TransportResponse<T>>;
+    get: <T = Params>(url: string, params?: Params) => Promise<TransportResponse<T>>;
+    delete: <T = Params>(url: string, params?: Params) => Promise<TransportResponse<T>>;
+    post: <T = Params>(url: string, body: Params) => Promise<TransportResponse<T>>;
+    put: <T = Params>(url: string, body: Params) => Promise<TransportResponse<T>>;
+    patch: <T = Params>(url: string, body: Params) => Promise<TransportResponse<T>>;
     options: (url: string, body: Params) => Promise<TransportResponse>;
+}
+export type TransportInstanceProps = {
+    fetch:Fetch;
+    context?:string;
+
+}
+export type TransportFactory = {
+	configure: (config: TransportConfig) => InternalTransportType;
+	instance: (context?: string  | TransportInstanceProps) => InternalTransportType;
 }
 
 export type StoreProps<T> = {
@@ -120,7 +122,20 @@ export type StoreProps<T> = {
     orderAndBy?: Order;
     namespace?: string;
     initData?: StoreState<T>;
+    transportContext?: string;
     includes?: string;
-    resultTransformer?: StoreTransformer;
-    queryTransformer?: StoreTransformer;
+    resultTransformer?: StoreResultTransformer;
+    queryTransformer?: StoreQueryTransformer;
+};
+export type ResourceType<T> = {
+    resolve: Snippet<[StoreResult<T>]>;	
+    store:Store<T>;
+}
+export type NetworkStatus = {
+	online:boolean;
+}
+
+export type Network = {
+	status: NetworkStatus;
+	qeueuRefresh: () => void;
 };

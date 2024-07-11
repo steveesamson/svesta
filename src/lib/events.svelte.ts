@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { UseEvent } from './types/index.js';
-// import { writable, get as g } from 'svelte/store';
 
 const eventMap = new Map();
 

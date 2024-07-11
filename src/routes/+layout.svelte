@@ -1,7 +1,7 @@
 <script>
 	import { base } from '$app/paths';
 	import { page } from '$app/stores';
-	import NetworkStatus from "$lib/components/network-status.svelte";
+	import Offline from "$lib/components/offline.svelte";
 	// import { version } from "../../package.json";
 	const { children } = $props();
 	let path = $page.route.id;
@@ -19,9 +19,9 @@
 	</nav>
 </header>
 <main>
-	<NetworkStatus>
+	<Offline>
 		<p>You're offline.</p>
-	</NetworkStatus>
+	</Offline>
 	{@render children()}
 </main>
 
@@ -74,9 +74,9 @@
 	:global(pre) {
 		padding: 1.5rem;
 		margin-block: 1.5rem;
-		/* margin-inline: 1rem; */
+		margin-inline: 1rem;
 		max-inline-size: 100%;
-		border-radius: 8px;
+		border-radius: 0px;
 		tab-size: 2;
 		overflow-x: auto;
 	}
@@ -92,21 +92,7 @@
 	
 	}
 
-	@media screen and (min-width: 600px) {
-		main, 
-		nav {
-			width: min(100%, 60em);
-		}
-		nav {
-			padding: 0.5rem 3rem;
-		}
-		nav div strong {
-			font-size: 3em;
-		}
-		nav a:first-of-type {
-			margin-inline-start: auto;
-		}
-	}
+	
 	:global(p),
 	:global(li) {
 		line-height: 1.65;
@@ -124,5 +110,32 @@
 	:global(h2),
 	:global(h3) {
 		margin-block-start: 3rem;
+		margin-inline: 1rem;
+	}
+
+	@media screen and (min-width: 600px) {
+		main, 
+		nav {
+			width: min(100%, 60em);
+		}
+		nav {
+			padding: 0.5rem 3rem;
+		}
+		nav div strong {
+			font-size: 3em;
+		}
+		nav a:first-of-type {
+			margin-inline-start: auto;
+		}
+
+		:global(pre) {
+			border-radius: 8px;
+		}
+
+		:global(h1),
+		:global(h2),
+		:global(h3) {
+			margin-inline:0;
+		}
 	}
 </style>

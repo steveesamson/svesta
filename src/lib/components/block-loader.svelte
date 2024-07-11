@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { relative } from "$lib/resource-action.js";
+	import { relative } from "../resource-action.js";
     import LoaderWithText from "./loader.svelte";
 
 	let { size = 18, text = 'Loading...', color = "#333333" } = $props();

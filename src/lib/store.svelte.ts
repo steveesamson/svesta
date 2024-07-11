@@ -5,13 +5,16 @@ import type {
 	StoreState,
 	Params,
 	StoreProps,
-	StoreTransformer,
-	IStore,
-	StoreEvent
+	StoreResultTransformer,
+	StoreQueryTransformer,
+	Store,
+	StoreEvent,
+	StoreResult,
+	TransportType,
+	TransportResponse
 } from './types/index.js';
-
-import type { Comet, WithID } from './types/internal.js';
-import { networkStatus } from './network-status.svelte.js';
+import type { Comet, InternalTransportType, WithID } from './types/internal.js';
+import { network } from './network.svelte.js';
 
 type GetStore<T> = {
 	name: string;
@@ -23,12 +26,13 @@ type GetStore<T> = {
 	namespace: string;
 	reverse: boolean;
 	LIMIT: number;
+	transportContext: string;
 	includes: string;
-	resultTransformer: StoreTransformer;
-	queryTransformer: StoreTransformer;
+	resultTransformer: StoreResultTransformer;
+	queryTransformer: StoreQueryTransformer;
 }
 
-const { realTime } = Transport.config;
+// const { realTime } = Transport.config;
 const stores: Params = {};
 
 
@@ -42,10 +46,12 @@ const getStore = <T extends WithID>(
 		namespace,
 		reverse = false,
 		LIMIT,
+		transportContext = 'default',
 		includes = '',
 		resultTransformer,
 		queryTransformer }: GetStore<T>
-): IStore<T> => {
+): Store<T> => {
+
 	const { data: initData = [] } = store;
 
 	let offset = 0,
@@ -53,8 +59,12 @@ const getStore = <T extends WithID>(
 		searchTerm = '',
 		insync = initData.length > 0,
 		infinite = false,
-		page = 1,
-		isOnline = networkStatus.isOnline();
+		page = 1;
+
+	const transport:InternalTransportType | undefined = Transport.instance(transportContext);
+	if(!transport){
+		throw Error("Unknown transport context: " + transportContext);
+	}
 
 	const storeName = name,
 		listeners: Params = {},
@@ -65,7 +75,7 @@ const getStore = <T extends WithID>(
 	};
 	const search = (s: string) =>
 		debounce(() => {
-			if(!isOnline) return;
+			if(!network.status.online) return;
 			insync = false;
 			offset = 0;
 			page = 1;
@@ -75,7 +85,7 @@ const getStore = <T extends WithID>(
 		}, 500)();
 
 	const filter = (q: Partial<T>) => {
-		if(!isOnline) return;
+		if(!network.status.online) return;
 		insync = false;
 		offset = 0;
 		page = 1;
@@ -84,7 +94,7 @@ const getStore = <T extends WithID>(
 	};
 
 	const next = async (): Promise<void> => {
-		if(!isOnline) return;
+		if(!network.status.online) return;
 		const { recordCount, page:curPage } = store;
 		const nextPage = curPage + 1;
 		const _offset = (nextPage - 1) * LIMIT;
@@ -103,7 +113,7 @@ const getStore = <T extends WithID>(
 		}
 	};
 	const prev = async (): Promise<void> => {
-		if(!isOnline) return;
+		if(!network.status.online) return;
 		const { recordCount, page:curPage } = store;
 		const nextPage = curPage - 1;
 		const _offset = (nextPage - 1) * LIMIT;
@@ -122,7 +132,7 @@ const getStore = <T extends WithID>(
 		}
 	};
 	const pageTo = async (nextPage: number): Promise<void> => {
-		if(!isOnline) return;
+		if(!network.status.online) return;
 		const _offset = (nextPage - 1) * LIMIT;
 		const { recordCount } = store;
 		if (_offset >= recordCount) {
@@ -144,7 +154,7 @@ const getStore = <T extends WithID>(
 		if (!insync) {
 			return console.log('Store not prefetched!');
 		}
-		if(!isOnline) return;
+		if(!network.status.online) return;
 
 		const _offset = page * LIMIT;
 		const { recordCount, loading } = store;
@@ -183,7 +193,7 @@ const getStore = <T extends WithID>(
 		return queryTransformer(newQuery);
 	};
 
-	const mutateMany = (dataIn: StoreState<T>) => {
+	const mutateMany = (dataIn: StoreResult<T>) => {
 		const { recordCount, data, page, pages: _pgs, limit } = dataIn;
 		if (limit && limit !== LIMIT) {
 			// Use limit from API
@@ -255,56 +265,56 @@ const getStore = <T extends WithID>(
 		if (!insync) {
 			return;
 		}
-		const { data: staleData, ...rest } = store;
+		const { data: staleData } = store;
 		const data = (staleData || []).map((rec: T) => (rec.id == inData.id ? { ...rec, ...inData } : rec));
 		store.data = data;	
 	};
 
-	const sync = async (initData?: StoreState<T>) => {
+	const sync = async (initData?: StoreResult<T>) => {
 		if (initData) {
 			return mutateMany(initData);
 		}
-		if(!isOnline) return;
+		if(!network.status.online) return;
 		if (insync) return;
 		const qry = prepQuery();
 		isLoading(true);
-		const { error, ...others } = await Transport.sync(url, 'get', { ...qry });
+		const { error, ...others } = await transport.sync(url, 'get', { ...qry });
 		isLoading(false);
 		if (error) {
 			store.error = error;
 			store.loading = false;
 		}
-		if (others) {
+		if (!error && others) {
 			const res = resultTransformer(others) as StoreState<T>;
 			mutateMany(res);
 		}
 	};
 
-	const post = async (postUrl: string, param: Params) => {
-		return await Transport.post(`${url}${postUrl}`, param);
+	const post = async <K>(postUrl: string, param: Params): Promise<TransportResponse<K>> => {
+		return await transport.post<K>(`${url}${postUrl}`, param);
 	};
-	const get = async (getUrl: string, param: Params) => {
-		return await Transport.get(`${url}${getUrl}`, param);
+	const get = async <K>(getUrl: string, param: Params): Promise<TransportResponse<K>> => {
+		return await transport.get<K>(`${url}${getUrl}`, param);
 	};
 	const destroy = async (where: WithID) => {
 		const _url = `${url}/${where.id}`;
-		const { error, status, data } = await Transport.sync(_url, 'delete', where);
-		if (!error && !!data) {
+		const { error, status, data } = await transport.sync(_url, 'delete', where);
+		if (!error && data) {
 			mutateRemove(data as T);
 			const message = `${makeName(storeName)} was successfully destroyed.`;
-			return { data, status, message };
+			return { data: data as T, status, message };
 		}
 		return { error, status };
 	};
-	const save = async (delta: T) => {
+	const save = async (delta: T):Promise<TransportResponse<T>> => {
 		const mtd = delta.id ? 'put' : 'post',
 			_url = delta.id ? `${url}/${delta.id}` : url;
 
-		const { error, status, data } = await Transport.sync(_url, mtd, delta);
+		const { error, status, data } = await transport.sync(_url, mtd, delta);
 
 		let message;
 
-		if (!error) {
+		if (!error && data) {
 			if (mtd === 'put') {
 				mutatePatch(data as T);
 				message = `${makeName(storeName)} was successfully updated.`;
@@ -313,7 +323,7 @@ const getStore = <T extends WithID>(
 				message = `${makeName(storeName)} was successfully created.`;
 			}
 		}
-		return { error, data, status, message };
+		return { error, data: data as T, status, message };
 	};
 
 	const find = async (value: string, key = 'id'): Promise<T | undefined> => {
@@ -323,8 +333,8 @@ const getStore = <T extends WithID>(
 		const { data = [] } = store;
 		return data.find((v: Params) => v[key] == value);
 	};
-	const despace = (_data: Params) => Transport.post(`${url}/despace`, _data);
-	const upload = (file: Params) => Transport.upload(`${url}/upload`, file);
+	const despace = (_data: Params) => transport.post(`${url}/despace`, _data);
+	const upload = (file: Params) => transport.upload(`${url}/upload`, file);
 	const on = (event: StoreEvent, handler: (data: T) => void) => {
 		const events = listeners[event] || [];
 		const index = events.length;
@@ -385,16 +395,14 @@ const getStore = <T extends WithID>(
 				}
 			}
 		};
-		Transport.onCometsNotify(storeTracker);
+		transport.onCometsNotify(storeTracker);
 	};
+	const { realTime } = transport.config;
 	if (realTime) {
+		transport.switchToRealTime();
 		startListening();
 	}
 
-	networkStatus.onChange((state:boolean) =>{
-		isOnline = state;
-		// store.error = '';
-	});
 
 	return {
 		get result(){
@@ -422,14 +430,14 @@ const getStore = <T extends WithID>(
 	};
 };
 
-if (realTime) {
-	Transport.switchToRealTime();
-}
+// if (realTime) {
+// 	Transport.switchToRealTime();
+// }
 
 export const useStore = <T extends WithID>(
 	resourceName: string = '',
 	props?: StoreProps<T>
-): IStore<T> => {
+): Store<T> => {
 	const {
 		params,
 		namespace,
@@ -437,19 +445,21 @@ export const useStore = <T extends WithID>(
 		initData,
 		resultTransformer,
 		queryTransformer,
+		transportContext,
 		includes
 	}: StoreProps<T> = {
 		...{
 			params: {},
 			namespace: resourceName,
 			orderAndBy: 'asc',
+			transportContext:'default',
 			includes: '',
-			initData: {} as StoreState<T>,
-			resultTransformer: (raw: Params) => {
-				return raw;
+			initData: {} as StoreResult<T>,
+			resultTransformer: <T>(raw: Params) => {
+				return raw as StoreResult<T>;
 			},
-			queryTransformer: (raw: Params) => {
-				return raw;
+			queryTransformer: <T>(raw: Params) => {
+				return raw as T;
 			}
 		},
 		...(props ?? {})
@@ -457,6 +467,7 @@ export const useStore = <T extends WithID>(
 
 	let orderBy = '', order;
 	const reverse = resourceName.indexOf('~') === 0;
+	resourceName = resourceName.indexOf('/') === 0? resourceName.substring(1) : resourceName;
 
 	if (orderAndBy) {
 		const [ord = 'asc', by = ''] = orderAndBy.split('|');
@@ -465,7 +476,7 @@ export const useStore = <T extends WithID>(
 	}
 
 	order = (order || 'asc').toLowerCase();
-	const keyMap = { order, orderBy, ...params };
+	const keyMap = { order, orderBy, transportContext, ...params };
 	if (orderBy) {
 		keyMap.orderBy = orderBy;
 	}
@@ -474,11 +485,12 @@ export const useStore = <T extends WithID>(
 	const store = stores[resultKey];
 
 	resourceName = resourceName.replace('~', '');
-	const NS = namespace.replace('~', '');
+	const nsp = namespace.indexOf('/') === 0? namespace.substring(1) : namespace;
+	const NS = nsp.replace('~', '');
 
 	if (store) {
 		const { limit = 25 } = store as StoreState<T>;
-		return getStore(
+		return getStore<T>(
 			{
 				name: resourceName,
 				params,
@@ -489,6 +501,7 @@ export const useStore = <T extends WithID>(
 				namespace: NS,
 				reverse,
 				LIMIT: limit,
+				transportContext,
 				includes,
 				resultTransformer,
 				queryTransformer
@@ -503,13 +516,14 @@ export const useStore = <T extends WithID>(
 		limit: 25,
 		loading: false,
 		error: null
-	} as StoreState<T>;
+	} as StoreResult<T>;
 
 	const fusedState = { ...defaultStoreData, ...initData };
 	const newStore: StoreState<T> = $state<StoreState<T>>(fusedState);
 	stores[resultKey] = newStore;
 	const { limit = 25 } = fusedState;
-	return getStore(
+	
+	return getStore<T>(
 		{
 			name: resourceName,
 			params,
@@ -521,6 +535,7 @@ export const useStore = <T extends WithID>(
 			reverse,
 			LIMIT: limit,
 			includes,
+			transportContext,
 			resultTransformer,
 			queryTransformer
 		}
