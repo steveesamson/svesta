@@ -1,8 +1,7 @@
 <script lang="ts">
-	import type { User } from "./types.js";
+	import type { User } from './types.js';
 
-	let { avatar, first_name, last_name, email }:User = $props();
-
+	let { avatar, first_name, last_name, email }: User = $props();
 </script>
 
 <li class="directory">

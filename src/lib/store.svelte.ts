@@ -10,7 +10,6 @@ import type {
 	Store,
 	StoreEvent,
 	StoreResult,
-	TransportType,
 	TransportResponse
 } from './types/index.js';
 import type { Comet, InternalTransportType, WithID } from './types/internal.js';
@@ -30,27 +29,25 @@ type GetStore<T> = {
 	includes: string;
 	resultTransformer: StoreResultTransformer;
 	queryTransformer: StoreQueryTransformer;
-}
+};
 
 const stores: Params = {};
 
-
-const getStore = <T extends WithID>(
-	{ name,
-		params = {},
-		order = 'asc',
-		orderBy,
-		store,
-		resultKey,
-		namespace,
-		reverse = false,
-		LIMIT,
-		transportContext = 'default',
-		includes = '',
-		resultTransformer,
-		queryTransformer }: GetStore<T>
-): Store<T> => {
-
+const getStore = <T extends WithID>({
+	name,
+	params = {},
+	order = 'asc',
+	orderBy,
+	store,
+	resultKey,
+	namespace,
+	reverse = false,
+	LIMIT,
+	transportContext = 'default',
+	includes = '',
+	resultTransformer,
+	queryTransformer
+}: GetStore<T>): Store<T> => {
 	const { data: initData = [] } = store;
 
 	let offset = 0,
@@ -62,7 +59,7 @@ const getStore = <T extends WithID>(
 
 	const transport: InternalTransportType | undefined = Transport.instance(transportContext);
 	if (!transport) {
-		throw Error("Unknown transport context: " + transportContext);
+		throw Error('Unknown transport context: ' + transportContext);
 	}
 
 	const storeName = name,
@@ -158,7 +155,6 @@ const getStore = <T extends WithID>(
 		const _offset = page * LIMIT;
 		const { recordCount, loading } = store;
 		if (_offset >= recordCount || loading) {
-
 			return;
 		}
 		const nextPage = page + 1;
@@ -208,7 +204,7 @@ const getStore = <T extends WithID>(
 				: [...(staleData || []), ...data]
 			: data;
 
-		const pages = _pgs ? _pgs : (recordCount ? Math.ceil(recordCount / LIMIT) : 0);
+		const pages = _pgs ? _pgs : recordCount ? Math.ceil(recordCount / LIMIT) : 0;
 		store.data = newData;
 		store.page = page;
 		store.pages = pages;
@@ -258,14 +254,15 @@ const getStore = <T extends WithID>(
 		store.pages = pages;
 		store.loading = false;
 		store.recordCount = recordCount;
-
 	};
 	const mutatePatch = (inData: T) => {
 		if (!insync) {
 			return;
 		}
 		const { data: staleData } = store;
-		const data = (staleData || []).map((rec: T) => (rec.id == inData.id ? { ...rec, ...inData } : rec));
+		const data = (staleData || []).map((rec: T) =>
+			rec.id == inData.id ? { ...rec, ...inData } : rec
+		);
 		store.data = data;
 	};
 
@@ -402,7 +399,6 @@ const getStore = <T extends WithID>(
 		startListening();
 	}
 
-
 	return {
 		get result() {
 			return store;
@@ -428,7 +424,6 @@ const getStore = <T extends WithID>(
 		debug: () => console.log(params, order)
 	};
 };
-
 
 export const useStore = <T extends WithID>(
 	resourceName: string = '',
@@ -461,7 +456,8 @@ export const useStore = <T extends WithID>(
 		...(props ?? {})
 	};
 
-	let orderBy = '', order;
+	let orderBy = '',
+		order;
 	const reverse = resourceName.indexOf('~') === 0;
 	resourceName = resourceName.indexOf('/') === 0 ? resourceName.substring(1) : resourceName;
 
@@ -486,23 +482,21 @@ export const useStore = <T extends WithID>(
 
 	if (store) {
 		const { limit = 25 } = store as StoreState<T>;
-		return getStore<T>(
-			{
-				name: resourceName,
-				params,
-				order,
-				orderBy,
-				store,
-				resultKey,
-				namespace: NS,
-				reverse,
-				LIMIT: limit,
-				transportContext,
-				includes,
-				resultTransformer,
-				queryTransformer
-			}
-		);
+		return getStore<T>({
+			name: resourceName,
+			params,
+			order,
+			orderBy,
+			store,
+			resultKey,
+			namespace: NS,
+			reverse,
+			LIMIT: limit,
+			transportContext,
+			includes,
+			resultTransformer,
+			queryTransformer
+		});
 	}
 	const defaultStoreData = {
 		data: [] as T[],
@@ -519,21 +513,19 @@ export const useStore = <T extends WithID>(
 	stores[resultKey] = newStore;
 	const { limit = 25 } = fusedState;
 
-	return getStore<T>(
-		{
-			name: resourceName,
-			params,
-			order,
-			orderBy,
-			store: newStore,
-			resultKey,
-			namespace: NS,
-			reverse,
-			LIMIT: limit,
-			includes,
-			transportContext,
-			resultTransformer,
-			queryTransformer
-		}
-	);
+	return getStore<T>({
+		name: resourceName,
+		params,
+		order,
+		orderBy,
+		store: newStore,
+		resultKey,
+		namespace: NS,
+		reverse,
+		LIMIT: limit,
+		includes,
+		transportContext,
+		resultTransformer,
+		queryTransformer
+	});
 };

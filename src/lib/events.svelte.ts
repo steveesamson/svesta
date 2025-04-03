@@ -28,7 +28,7 @@ export const useEvents = <T = any>(type: string, defaultValue?: T): UseEvent<T> 
 		},
 		clear() {
 			events = { type };
-		},
+		}
 	};
 
 	eventMap.set(type, exported);

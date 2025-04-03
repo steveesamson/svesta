@@ -7,7 +7,7 @@
 
 <ul class="directories">
 	{#if users}
-		{#each users as user, i}
+		{#each users as user (user.id)}
 			<Item {...user} />
 		{/each}
 	{/if}

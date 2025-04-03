@@ -6,7 +6,6 @@
 	import Resource from '$lib/components/resource.svelte';
 	import UserList from './demo-assets/users.svelte';
 	import type { IngressType, User } from './demo-assets/types.js';
-	import Offline from '@root/src/lib/components/offline.svelte';
 
 	type ViewData = { data: StoreState<User> };
 	const { data }: ViewData = $props();
