@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Fetch, InternalTransportType, WithID } from './internal.js';
+import type { Fetch, InternalTransportType } from './internal.js';
 
 export type HTTPMethod =
 	| 'GET'
@@ -9,19 +9,27 @@ export type HTTPMethod =
 	| 'HEAD'
 	| 'OPTIONS'
 	| 'PATCH'
+	| 'UPLOAD'
 	| 'get'
 	| 'post'
 	| 'delete'
 	| 'put'
 	| 'head'
 	| 'options'
-	| 'patch';
+	| 'patch'
+	| 'upload';
 
+export type WithID = { id?: any; } & Params;
 export type Order = 'asc' | 'desc' | string;
 
 export type Params<T = any> = {
 	[key: string]: T;
 };
+
+type ContentType = 'ApplicationJson' | 'FormURLEncoded';
+export type ContentTypes = {
+	[key in ContentType]: string;
+}
 export type UseEvent<T> = {
 	is: (value: T) => boolean;
 	get value(): T;
@@ -44,8 +52,8 @@ export type TransportResponse<T = unknown> = {
 	message?: string;
 };
 
-export type StoreResult<T> = {
-	data: T[];
+export type StoreResult<T extends WithID> = {
+	data?: T[];
 	recordCount: number;
 	pages: number;
 	page: number;
@@ -53,8 +61,8 @@ export type StoreResult<T> = {
 	loading?: boolean;
 	error?: string | null | undefined;
 };
-export type StoreState<T> = {
-	data: T[];
+export type StoreState<T extends WithID> = {
+	data?: T[];
 	recordCount: number;
 	pages: number;
 	page: number;
@@ -64,19 +72,19 @@ export type StoreState<T> = {
 	params?: Params;
 };
 export type StoreEvent = 'refresh' | 'create' | 'destroy' | 'update';
-export type StoreResultTransformer = <T>(response: any) => StoreResult<T>;
+export type StoreResultTransformer<T extends WithID> = (response: any) => StoreResult<T>;
 export type StoreQueryTransformer = (response: any) => Params;
 
-export interface Store<T> {
+export interface Store<T extends WithID> {
 	result: StoreResult<T>;
-	sync: (init?: StoreState<T>) => void;
-	more: () => void;
-	pageTo: (page: number) => void;
-	next: () => void;
-	prev: () => void;
+	sync: (init?: StoreState<T>) => Promise<void>;
+	more: () => Promise<void>;
+	pageTo: (page: number) => Promise<void>;
+	next: () => Promise<void>;
+	prev: () => Promise<void>;
 	on: (event: StoreEvent, handler: EventHandler) => void;
 	search: (searchTerm: string) => void;
-	destroy: (where: WithID) => Promise<TransportResponse<T>>;
+	destroy: (where: T) => Promise<TransportResponse<T>>;
 	save: (delta: T) => Promise<TransportResponse<T>>;
 	find: (value: any, key: string) => Promise<T | undefined>;
 	post: <K = Params>(path: string, params: Params) => Promise<TransportResponse<K>>;
@@ -102,6 +110,7 @@ export type TransportConfig = {
 	context?: string;
 	realTime?: SocketIOConfig;
 	init?: RequestInit;
+	beforeSend?: (headers: Params) => void;
 };
 
 export type TransportType = {
@@ -117,20 +126,21 @@ export type TransportType = {
 export type TransportInstanceProps = {
 	fetch: Fetch;
 	context?: string;
+	beforeSend?: (headers: Params) => void;
 };
 export type TransportFactory = {
 	configure: (config: TransportConfig) => InternalTransportType;
 	instance: (context?: string | TransportInstanceProps) => InternalTransportType;
 };
 
-export type StoreProps<T> = {
+export type StoreProps<T extends WithID> = {
 	params?: Params;
 	orderAndBy?: Order;
 	namespace?: string;
 	initData?: StoreState<T>;
 	transportContext?: string;
 	includes?: string;
-	resultTransformer?: StoreResultTransformer;
+	resultTransformer?: StoreResultTransformer<T>;
 	queryTransformer?: StoreQueryTransformer;
 };
 

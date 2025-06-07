@@ -12,13 +12,14 @@ export const useRealtime = async (transport: InternalTransportType) => {
 		const socket = io(`${BASE_URL}`, realTime); //['polling','websocket'];
 
 		socket.on('connect', function () {
-			transport.sync = function (url: string, method: HTTPMethod, data?: Params) {
+			transport.sync = function (url: string, method: HTTPMethod, _data?: Params) {
 				if (!network.status.online) {
 					network.qeueuRefresh();
 					return Promise.resolve({ error: 'You seem to be offline :)', status: 404 });
 				}
 				return new Promise((resolve) => {
 					try {
+						const data = { ..._data, __client_time: new Date().toISOString() };
 						socket.emit(method, { path: url, data }, (m: Params) => {
 							const { status, body } = m;
 							const all: Response = { status, ...(body || {}) };
@@ -48,7 +49,7 @@ export const useRealtime = async (transport: InternalTransportType) => {
 								'method: ',
 								method,
 								' args: ',
-								data
+								_data
 							);
 						}
 						resolve({ error: e.toString(), status: 500 });

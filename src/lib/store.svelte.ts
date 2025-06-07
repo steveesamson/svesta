@@ -15,7 +15,7 @@ import type {
 import type { Comet, InternalTransportType, WithID } from './types/internal.js';
 import { network } from './network.svelte.js';
 
-type GetStore<T> = {
+type GetStore<T extends WithID> = {
 	name: string;
 	params: Params;
 	order: string;
@@ -27,9 +27,19 @@ type GetStore<T> = {
 	LIMIT: number;
 	transportContext: string;
 	includes: string;
-	resultTransformer: StoreResultTransformer;
+	resultTransformer: StoreResultTransformer<T>;
 	queryTransformer: StoreQueryTransformer;
 };
+
+const transformers = {
+	resultTransformer: <P extends WithID>(raw: Params) => {
+		return raw as StoreResult<P>;
+	},
+	queryTransformer: <T>(raw: Params) => {
+		return raw as T;
+	}
+};
+
 
 const stores: Params = {};
 
@@ -91,7 +101,7 @@ const getStore = <T extends WithID>({
 
 	const next = async (): Promise<void> => {
 		if (!network.status.online) return;
-		const { recordCount, page: curPage } = store;
+		const { recordCount, page: curPage = page } = store;
 		const nextPage = curPage + 1;
 		const _offset = (nextPage - 1) * LIMIT;
 		if (_offset >= recordCount) {
@@ -110,7 +120,7 @@ const getStore = <T extends WithID>({
 	};
 	const prev = async (): Promise<void> => {
 		if (!network.status.online) return;
-		const { recordCount, page: curPage } = store;
+		const { recordCount, page: curPage = page } = store;
 		const nextPage = curPage - 1;
 		const _offset = (nextPage - 1) * LIMIT;
 		if (_offset >= recordCount) {
@@ -189,7 +199,7 @@ const getStore = <T extends WithID>({
 	};
 
 	const mutateMany = (dataIn: StoreResult<T>) => {
-		const { recordCount, data, page, pages: _pgs, limit } = dataIn;
+		const { recordCount, data = [], page, pages: _pgs, limit } = dataIn;
 		if (limit && limit !== LIMIT) {
 			// Use limit from API
 			LIMIT = limit;
@@ -220,7 +230,7 @@ const getStore = <T extends WithID>({
 
 		const exists = await find(inData.id);
 		if (exists) {
-			const { data: oldData, recordCount: oldRecordCount } = store;
+			const { data: oldData = [], recordCount: oldRecordCount } = store;
 			const recordCount = oldRecordCount - 1;
 			const data = oldData.filter((e: T) => e.id != inData.id);
 			const pages = recordCount ? Math.ceil(recordCount / LIMIT) : 0;
@@ -275,7 +285,7 @@ const getStore = <T extends WithID>({
 		const qry = prepQuery();
 		isLoading(true);
 		const { error, ...others } = await transport.sync(url, 'get', { ...qry });
-		isLoading(false);
+
 		if (error) {
 			store.error = error;
 			store.loading = false;
@@ -284,6 +294,7 @@ const getStore = <T extends WithID>({
 			const res = resultTransformer(others) as StoreState<T>;
 			mutateMany(res);
 		}
+		isLoading(false);
 	};
 
 	const post = async <K>(postUrl: string, param: Params): Promise<TransportResponse<K>> => {
@@ -292,7 +303,7 @@ const getStore = <T extends WithID>({
 	const get = async <K>(getUrl: string, param: Params): Promise<TransportResponse<K>> => {
 		return await transport.get<K>(`${url}${getUrl}`, param);
 	};
-	const destroy = async (where: WithID) => {
+	const destroy = async (where: T) => {
 		const _url = `${url}/${where.id}`;
 		const { error, status, data } = await transport.sync(_url, 'delete', where);
 		if (!error && data) {
@@ -446,15 +457,12 @@ export const useStore = <T extends WithID>(
 			transportContext: 'default',
 			includes: '',
 			initData: {} as StoreResult<T>,
-			resultTransformer: <T>(raw: Params) => {
-				return raw as StoreResult<T>;
-			},
-			queryTransformer: <T>(raw: Params) => {
-				return raw as T;
-			}
+			resultTransformer: transformers.resultTransformer,
+			queryTransformer: transformers.queryTransformer
 		},
 		...(props ?? {})
 	};
+
 
 	let orderBy = '',
 		order;
@@ -480,7 +488,9 @@ export const useStore = <T extends WithID>(
 	const nsp = namespace.indexOf('/') === 0 ? namespace.substring(1) : namespace;
 	const NS = nsp.replace('~', '');
 
-	if (store) {
+	// Prevent updates
+	const { initData: indata } = props || {};
+	if (store && !indata) {
 		const { limit = 25 } = store as StoreState<T>;
 		return getStore<T>({
 			name: resourceName,
@@ -499,7 +509,7 @@ export const useStore = <T extends WithID>(
 		});
 	}
 	const defaultStoreData = {
-		data: [] as T[],
+		data: undefined,
 		recordCount: 0,
 		pages: 0,
 		page: 1,
@@ -528,4 +538,11 @@ export const useStore = <T extends WithID>(
 		resultTransformer,
 		queryTransformer
 	});
-};
+}
+
+export const useGlobalResultTransformer = <T extends WithID>(transformer: StoreResultTransformer<T>) => {
+	transformers.resultTransformer = transformer;
+}
+export const useGlobalQueryTransformer = (transformer: StoreQueryTransformer) => {
+	transformers.queryTransformer = transformer;
+}

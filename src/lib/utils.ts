@@ -1,3 +1,5 @@
+import type { Params } from "./types/index.js";
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const makeName = function (str: string) {
 	str = str + '';
@@ -15,13 +17,27 @@ export const makeName = function (str: string) {
 	return new_name;
 };
 
-// export const debounce = function (func: () => void, wait: number) {
-// 	let timeout: number;
-// 	return (...args: any) => {
-// 		clearTimeout(timeout);
-// 		timeout = setTimeout(() => func.apply(this, args), wait);
-// 	};
-// };
+export const toQueryString = (params?: Params): string => {
+	if (!params) return '';
+
+	const flat: Params = {};
+	const json: Array<string> = [];
+
+	for (const [k, v] of Object.entries(params)) {
+		if (typeof v === 'object') {
+			json.push(`${k}=${encodeURIComponent(JSON.stringify(v))}`);
+		} else {
+			flat[k] = v;
+		}
+	}
+
+	const qs = new URLSearchParams(flat).toString();
+	if (json.length < 1) {
+		return qs;
+	}
+
+	return qs ? `${qs}&${json.join('&')}` : json.join('&');
+};
 
 export const debounce = <T extends unknown[]>(callback: (...args: T) => void, delay: number) => {
 	let timeoutTimer: ReturnType<typeof setTimeout>;
@@ -34,3 +50,8 @@ export const debounce = <T extends unknown[]>(callback: (...args: T) => void, de
 		}, delay);
 	};
 };
+
+
+export const beforeSend = (header: Params) => {
+	header['x-api-key'] = 'reqres-free-v1';
+}

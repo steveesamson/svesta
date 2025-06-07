@@ -6,21 +6,21 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		
 		<link href="./_app/immutable/assets/0.D50sZENA.css" rel="stylesheet">
-		<link rel="modulepreload" href="./_app/immutable/entry/start.BHFyKzFu.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/CHURVhM2.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/Dah7JrHO.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/e-rGjwIX.js">
-		<link rel="modulepreload" href="./_app/immutable/entry/app.qrrbWysk.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/CULLAqQ3.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/Cajzvt10.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/UV82x-mh.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/DxZkoDxB.js">
-		<link rel="modulepreload" href="./_app/immutable/nodes/0.BZRLyG0O.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/C5xcGWzS.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/dIjRkqQ1.js">
-		<link rel="modulepreload" href="./_app/immutable/nodes/2.DBulAcCD.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/DlqLyx3d.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/BqJGTGtP.js"><!--[--><meta property="og:type" content="svesta home"> <meta property="og:title" content="Svesta home"><!--]--><title>Svesta Home &amp; Docs</title>
+		<link rel="modulepreload" href="./_app/immutable/entry/start.CF1qUdpM.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/BOboMmCq.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/eZGv4jwx.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/BDgVjPmL.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/app.Bykz_17q.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/Dqzq9lYN.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/Cvhe9cle.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/CmHqByzz.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/sv5Xoyy2.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/0.CT4lK_dS.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/V2AjZ8sB.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/cC-HA56Z.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/2.DYlqKfsJ.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/BGcDROCU.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/BvRqW2WB.js"><!--[--><meta property="og:type" content="svesta home"> <meta property="og:title" content="Svesta home"><!--]--><title>Svesta Home &amp; Docs</title>
 		<style>
 			.content {
 				margin: 0;
@@ -61,6 +61,9 @@
 <span class="line"><span style="color: #A6ACCD">	</span><span style="color: #767C9DB0; font-style: italic">// one, tag it with a context</span></span>
 <span class="line"><span style="color: #A6ACCD">	</span><span style="color: #767C9DB0; font-style: italic">// This allows you have multiple transport instances.</span></span>
 <span class="line"><span style="color: #E4F0FB">	</span><span style="color: #ADD7FF">context</span><span style="color: #A6ACCD">:</span><span style="color: #ADD7FF"> </span><span style="color: #A6ACCD">&#39;</span><span style="color: #5DE4C7">news</span><span style="color: #A6ACCD">&#39;</span><span style="color: #ADD7FF"> </span><span style="color: #767C9DB0; font-style: italic">// This is used in accessing the instance later</span></span>
+<span class="line"><span style="color: #A6ACCD">	</span><span style="color: #767C9DB0; font-style: italic">// A function that allows user set headers before sending requests</span></span>
+<span class="line"><span style="color: #ADD7FF">	</span><span style="color: #E4F0FBD0">beforeSend</span><span style="color: #A6ACCD">(</span><span style="color: #E4F0FB">headers</span><span style="color: #ADD7FF">:</span><span style="color: #E4F0FB">Params</span><span style="color: #A6ACCD">)&#123;</span></span>
+<span class="line"><span style="color: #E4F0FB">	</span><span style="color: #A6ACCD">&#125;</span></span>
 <span class="line"><span style="color: #A6ACCD">&#125;;</span></span>
 <span class="line"></span>
 <span class="line"><span style="color: #E4F0FB">Transport</span><span style="color: #A6ACCD">.</span><span style="color: #E4F0FBD0">configure</span><span style="color: #A6ACCD">(</span><span style="color: #E4F0FB">configOptions</span><span style="color: #A6ACCD">);</span></span></code></pre><!----> <blockquote><p>Best practices favors doing all your Transport configuration in the <code>+layout.[t|j]s</code> in a manageable way. While <code>Transport.configure</code> could be done within your view’s <code>$effect</code> or in your <code>+page.[j|t]s</code>, the recommended place to do the setupu is the <code>+layout.[j|t]s</code> like below:</p></blockquote> <h4>In +layout.ts</h4> <!----><pre class="shiki poimandres" style="background-color: #1b1e28" tabindex="0"><code><span class="line"><span style="color: #5DE4C7">import </span><span style="color: #A6ACCD">&#123;</span><span style="color: #5DE4C7"> </span><span style="color: #ADD7FF">Transport</span><span style="color: #5DE4C7"> </span><span style="color: #A6ACCD">&#125;</span><span style="color: #5DE4C7"> </span><span style="color: #A6ACCD">from</span><span style="color: #5DE4C7"> </span><span style="color: #A6ACCD">&#39;</span><span style="color: #5DE4C7">svesta</span><span style="color: #A6ACCD">&#39;</span><span style="color: #A6ACCD">;</span></span>
@@ -99,7 +102,13 @@
 <span class="line"></span>
 <span class="line"><span style="color: #A6ACCD">	</span><span style="color: #767C9DB0; font-style: italic">// Scoped only for news</span></span>
 <span class="line"><span style="color: #A6ACCD">	</span><span style="color: #767C9DB0; font-style: italic">// Must have been configured too</span></span>
-<span class="line"><span style="color: #A6ACCD">	</span><span style="color: #91B4D5">const</span><span style="color: #A6ACCD"> </span><span style="color: #E4F0FB">transport</span><span style="color: #A6ACCD"> </span><span style="color: #91B4D5">=</span><span style="color: #A6ACCD"> </span><span style="color: #E4F0FB">Transport</span><span style="color: #A6ACCD">.</span><span style="color: #E4F0FBD0">instance</span><span style="color: #A6ACCD">(&#123;</span><span style="color: #E4F0FB"> </span><span style="color: #ADD7FF">context</span><span style="color: #A6ACCD">:</span><span style="color: #ADD7FF"> </span><span style="color: #A6ACCD">&#39;</span><span style="color: #5DE4C7">news</span><span style="color: #A6ACCD">&#39;</span><span style="color: #A6ACCD">,</span><span style="color: #E4F0FB"> fetch</span><span style="color: #ADD7FF"> </span><span style="color: #A6ACCD">&#125;);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color: #A6ACCD">	</span><span style="color: #767C9DB0; font-style: italic">// Let&#39;s even use beforeSend</span></span>
+<span class="line"><span style="color: #A6ACCD">	</span><span style="color: #91B4D5">const</span><span style="color: #A6ACCD"> </span><span style="color: #E4F0FB">token</span><span style="color: #A6ACCD"> </span><span style="color: #91B4D5">=</span><span style="color: #A6ACCD"> </span><span style="color: #A6ACCD">&#39;</span><span style="color: #5DE4C7">some-token</span><span style="color: #A6ACCD">&#39;</span><span style="color: #A6ACCD">;</span></span>
+<span class="line"><span style="color: #A6ACCD">	</span><span style="color: #91B4D5">const</span><span style="color: #A6ACCD"> </span><span style="color: #ADD7FF">beforeSend</span><span style="color: #A6ACCD"> </span><span style="color: #91B4D5">=</span><span style="color: #A6ACCD"> (</span><span style="color: #E4F0FB">headers</span><span style="color: #91B4D5">:</span><span style="color: #A6ACCD"> </span><span style="color: #A6ACCDC0">Params</span><span style="color: #A6ACCD">) </span><span style="color: #91B4D5">=&gt;</span><span style="color: #A6ACCD"> &#123;</span></span>
+<span class="line"><span style="color: #A6ACCD">		</span><span style="color: #E4F0FB">headers</span><span style="color: #A6ACCD">[</span><span style="color: #A6ACCD">&#39;</span><span style="color: #5DE4C7">authorization</span><span style="color: #A6ACCD">&#39;</span><span style="color: #A6ACCD">] </span><span style="color: #91B4D5">=</span><span style="color: #A6ACCD"> </span><span style="color: #A6ACCD">&#96;</span><span style="color: #5DE4C7">Bearer </span><span style="color: #A6ACCD">$&#123;</span><span style="color: #E4F0FB">token</span><span style="color: #A6ACCD">&#125;&#96;</span><span style="color: #A6ACCD">;</span></span>
+<span class="line"><span style="color: #A6ACCD">	&#125;;</span></span>
+<span class="line"><span style="color: #A6ACCD">	</span><span style="color: #91B4D5">const</span><span style="color: #A6ACCD"> </span><span style="color: #E4F0FB">transport</span><span style="color: #A6ACCD"> </span><span style="color: #91B4D5">=</span><span style="color: #A6ACCD"> </span><span style="color: #E4F0FB">Transport</span><span style="color: #A6ACCD">.</span><span style="color: #E4F0FBD0">instance</span><span style="color: #A6ACCD">(&#123;</span><span style="color: #E4F0FB"> </span><span style="color: #ADD7FF">context</span><span style="color: #A6ACCD">:</span><span style="color: #ADD7FF"> </span><span style="color: #A6ACCD">&#39;</span><span style="color: #5DE4C7">news</span><span style="color: #A6ACCD">&#39;</span><span style="color: #A6ACCD">,</span><span style="color: #E4F0FB"> fetch</span><span style="color: #A6ACCD">,</span><span style="color: #E4F0FB"> beforeSend</span><span style="color: #ADD7FF"> </span><span style="color: #A6ACCD">&#125;);</span></span>
 <span class="line"></span>
 <span class="line"><span style="color: #A6ACCD">	</span><span style="color: #91B4D5">const</span><span style="color: #A6ACCD"> &#123; </span><span style="color: #E4F0FB">error</span><span style="color: #A6ACCD">, </span><span style="color: #91B4D5">...</span><span style="color: #E4F0FB">rest</span><span style="color: #A6ACCD"> &#125; </span><span style="color: #91B4D5">=</span><span style="color: #A6ACCD"> </span><span style="color: #5DE4C7C0">await</span><span style="color: #A6ACCD"> </span><span style="color: #E4F0FB">transport</span><span style="color: #A6ACCD">.</span><span style="color: #E4F0FBD0">get</span><span style="color: #A6ACCD">(</span><span style="color: #A6ACCD">&#39;</span><span style="color: #5DE4C7">/users</span><span style="color: #A6ACCD">&#39;</span><span style="color: #A6ACCD">);</span></span>
 <span class="line"></span>
@@ -200,7 +209,7 @@
 <span class="line"><span style="color: #A6ACCD">	</span><span style="color: #91B4D5">const</span><span style="color: #A6ACCD"> &#123; </span><span style="color: #E4F0FB">page</span><span style="color: #A6ACCD">, per_page: </span><span style="color: #E4F0FB">limit</span><span style="color: #A6ACCD">, total: </span><span style="color: #E4F0FB">recordCount</span><span style="color: #A6ACCD">, total_pages: </span><span style="color: #E4F0FB">pages</span><span style="color: #A6ACCD">, </span><span style="color: #E4F0FB">data</span><span style="color: #A6ACCD"> &#125; </span><span style="color: #91B4D5">=</span><span style="color: #A6ACCD"> </span><span style="color: #E4F0FB">raw</span><span style="color: #A6ACCD">;</span></span>
 <span class="line"><span style="color: #A6ACCD">	</span><span style="color: #767C9DB0; font-style: italic">// return what conforms to StoreState</span></span>
 <span class="line"><span style="color: #A6ACCD">	</span><span style="color: #5DE4C7C0">return</span><span style="color: #A6ACCD"> &#123;</span><span style="color: #E4F0FB"> page</span><span style="color: #A6ACCD">,</span><span style="color: #E4F0FB"> limit</span><span style="color: #A6ACCD">,</span><span style="color: #E4F0FB"> recordCount</span><span style="color: #A6ACCD">,</span><span style="color: #E4F0FB"> pages</span><span style="color: #A6ACCD">,</span><span style="color: #E4F0FB"> data</span><span style="color: #ADD7FF"> </span><span style="color: #A6ACCD">&#125;;</span></span>
-<span class="line"><span style="color: #A6ACCD">&#125;;</span></span></code></pre><!----> <p><code>useStore</code> exposes <code>result</code>, which is a state object comprising of:</p> <ul><li><code>loading</code>: A <code>boolean</code> indicative of on-going network request or not.</li> <li><code>error</code>: A <code>string</code> that is non-empty whenever <code>store</code> request resolves with some error.</li> <li><code>data</code>: An object of type <code>T[]</code> representing the data from API when store request resolves with no <code>error</code>.</li></ul> <!----><pre class="shiki poimandres" style="background-color: #1b1e28" tabindex="0"><code><span class="line"><span style="color: #5DE4C7">import </span><span style="color: #A6ACCD">&#123;</span><span style="color: #5DE4C7"> </span><span style="color: #ADD7FF">useStore</span><span style="color: #5DE4C7"> </span><span style="color: #A6ACCD">&#125;</span><span style="color: #5DE4C7"> </span><span style="color: #A6ACCD">from</span><span style="color: #5DE4C7"> </span><span style="color: #A6ACCD">&#39;</span><span style="color: #5DE4C7">svesta</span><span style="color: #A6ACCD">&#39;</span><span style="color: #A6ACCD">;</span></span>
+<span class="line"><span style="color: #A6ACCD">&#125;;</span></span></code></pre><!----> <blockquote><p>Note: You can register a global resultTransformer, by using the <code>useGlobalResultTransformer</code> hook.</p></blockquote> <blockquote><p>You can equally register a global queryTransformer, by using the <code>useGlobalQueryTransformer</code> hook.</p></blockquote> <p><code>useStore</code> exposes <code>result</code>, which is a state object comprising of:</p> <ul><li><code>loading</code>: A <code>boolean</code> indicative of on-going network request or not.</li> <li><code>error</code>: A <code>string</code> that is non-empty whenever <code>store</code> request resolves with some error.</li> <li><code>data</code>: An object of type <code>T[]</code> representing the data from API when store request resolves with no <code>error</code>.</li></ul> <!----><pre class="shiki poimandres" style="background-color: #1b1e28" tabindex="0"><code><span class="line"><span style="color: #5DE4C7">import </span><span style="color: #A6ACCD">&#123;</span><span style="color: #5DE4C7"> </span><span style="color: #ADD7FF">useStore</span><span style="color: #5DE4C7"> </span><span style="color: #A6ACCD">&#125;</span><span style="color: #5DE4C7"> </span><span style="color: #A6ACCD">from</span><span style="color: #5DE4C7"> </span><span style="color: #A6ACCD">&#39;</span><span style="color: #5DE4C7">svesta</span><span style="color: #A6ACCD">&#39;</span><span style="color: #A6ACCD">;</span></span>
 <span class="line"></span>
 <span class="line"><span style="color: #91B4D5">const</span><span style="color: #A6ACCD"> &#123;</span></span>
 <span class="line"><span style="color: #A6ACCD">	</span><span style="color: #E4F0FB">sync</span><span style="color: #A6ACCD">,</span></span>
@@ -389,15 +398,15 @@
 			
 			<script>
 				{
-					__sveltekit_1frt20j = {
+					__sveltekit_xcexj0 = {
 						base: new URL(".", location).pathname.slice(0, -1)
 					};
 
 					const element = document.currentScript.parentElement;
 
 					Promise.all([
-						import("./_app/immutable/entry/start.BHFyKzFu.js"),
-						import("./_app/immutable/entry/app.qrrbWysk.js")
+						import("./_app/immutable/entry/start.CF1qUdpM.js"),
+						import("./_app/immutable/entry/app.Bykz_17q.js")
 					]).then(([kit, app]) => {
 						kit.start(app, element, {
 							node_ids: [0, 2],

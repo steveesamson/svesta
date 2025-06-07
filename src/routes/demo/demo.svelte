@@ -21,7 +21,9 @@
 </script>
 
 {#snippet resolve({ data, page, pages, loading, error }: StoreResult<User>)}
-	<UserList users={data} />
+	{#if data}
+		<UserList users={data} />
+	{/if}
 
 	{#if loading}
 		<Loader text="Wait a sec..." />

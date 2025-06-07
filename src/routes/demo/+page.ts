@@ -4,15 +4,16 @@ import type { PageLoad } from './$types.js';
 import { resultTransformer } from './demo-assets/transformer.js';
 import type { User } from './demo-assets/types.js';
 import type { StoreState } from '$lib/index.js';
+import { beforeSend } from '$lib/utils.js';
 
 export const load: PageLoad = async ({ fetch }): Promise<StoreState<User[]>> => {
 	// This could be happening on the server and we have a ref to a fetch
 	// implementation, let's use it by passing it to the configure
 	// method of Transport
 
-	const transport = Transport.instance({ fetch });
+	const transport = Transport.instance({ fetch, beforeSend });
 
 	const { error, ...rest } = await transport.get<User[]>('/users');
 
-	return { ...resultTransformer(rest), error };
+	return { ...resultTransformer(rest), error } as StoreState<User[]>;
 };

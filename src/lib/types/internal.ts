@@ -9,9 +9,8 @@ import type {
 	UseEvent
 } from './index.js';
 
-export type WithID = {
-	id: any;
-};
+
+export type WithID = { id?: any; } & Params;
 
 type Data<T = any> = {
 	[key: string]: T | T[];

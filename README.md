@@ -62,6 +62,9 @@ const configOptions: TransportConfig = {
 	// one, tag it with a context
 	// This allows you have multiple transport instances.
 	context: 'news' // This is used in accessing the instance later
+	// A function that allows user set headers before sending requests
+	beforeSend(headers:Params){
+	}
 };
 
 Transport.configure(configOptions);
@@ -123,13 +126,19 @@ import type { PageLoad } from './$types.js';
 import { resultTransformer } from '..';
 
 export const load: PageLoad = async ({ fetch }) => {
-	// This is happening on the server and we have a ref to a fetch
+	// This is happening on the server/client and we have a ref to a fetch
 	// implementation, let's use it by passing it to the configure
 	// method of Transport
 
 	// Scoped only for news
 	// Must have been configured too
-	const transport = Transport.instance({ context: 'news', fetch });
+
+	// Let's even use beforeSend
+	const token = 'some-token';
+	const beforeSend = (headers: Params) => {
+		headers['authorization'] = `Bearer ${token}`;
+	};
+	const transport = Transport.instance({ context: 'news', fetch, beforeSend });
 
 	const { error, ...rest } = await transport.get('/users');
 
@@ -281,6 +290,10 @@ export const resultTransformer = <User>(raw: IngressType): StoreResult<User> => 
 	return { page, limit, recordCount, pages, data };
 };
 ```
+
+> Note: You can register a global resultTransformer, by using the `useGlobalResultTransformer` hook.
+
+> You can equally register a global queryTransformer, by using the `useGlobalQueryTransformer` hook.
 
 `useStore` exposes `result`, which is a state object comprising of:
 

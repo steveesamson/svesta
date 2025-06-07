@@ -9,91 +9,115 @@ import type {
 	TransportConfig,
 	TransportFactory,
 	UseEvent,
-	TransportInstanceProps
+	TransportInstanceProps,
+	ContentTypes
 } from './types/index.js';
 import type { Comet, StoreListener, InternalTransportType } from './types/internal.js';
+import { toQueryString } from './utils.js';
 
+export const contentType: ContentTypes = {
+	ApplicationJson: 'application/json',
+	FormURLEncoded: 'application/x-www-form-urlencoded',
+}
 const transportsMap: Params<InternalTransportType> = {};
-
+export const NETWORK_LOADING = 'loading';
 const withFetch =
 	(transport: InternalTransportType) =>
-	async <K = Params>(
-		url: string,
-		method: HTTPMethod,
-		params: Params | undefined = undefined
-	): Promise<TransportResponse<K>> => {
-		if (!network.status.online) {
-			network.qeueuRefresh();
-			return Promise.resolve({ error: 'You seem to be offline :)', status: 404 });
-		}
-		const { BASE_URL, init } = transport.config;
-		let { fetch: _fetch } = transport.config;
-		if (!BASE_URL) {
-			console.warn(
-				'You did not set the BASE_URL on Transport before invoking methods; this might break your requests. I hope this is deliberate and you are passing url as FQDN plus paths.'
-			);
-		}
-		if (!_fetch && typeof window !== 'undefined') {
-			_fetch = window.fetch;
-		}
-		if (!_fetch) {
-			return Promise.resolve({
-				error:
-					'You seem to be invoking methods on Transport from server; pass down fetch from your view +page.[t/j]s :)',
-				status: 500
-			});
-		}
-		const hasBody = ['post', 'put'].includes(method.toLowerCase());
+		async <K = Params>(
+			url: string,
+			method: HTTPMethod,
+			params: Params | undefined = undefined
+		): Promise<TransportResponse<K>> => {
+			if (!network.status.online) {
+				network.qeueuRefresh();
+				return Promise.resolve({ error: 'You seem to be offline :)', status: 404 });
+			}
+			const isUpload = method.toLowerCase() === 'upload';
 
-		if (!hasBody) {
-			url = params ? [url, new URLSearchParams(params).toString()].join('?') : url;
-		}
+			// const { BASE_URL, init = {}, beforeSend } = transport.config;
+			const { BASE_URL, init: base = {}, beforeSend } = transport.config;
+			const init = { ...base };
+			let { fetch: _fetch } = transport.config;
 
-		const remote = `${BASE_URL}${url}`;
-		const body = hasBody ? JSON.stringify(params || {}) : undefined;
-		transport.loading.value = true;
+			if (!BASE_URL) {
+				console.warn(
+					'You did not set the BASE_URL on Transport before invoking methods; this might break your requests. I hope this is deliberate and you are passing url as FQDN plus paths.'
+				);
+			}
+			if (!_fetch && typeof window !== 'undefined') {
+				_fetch = window.fetch;
+			}
+			if (!_fetch) {
+				return Promise.resolve({
+					error:
+						'You seem to be invoking methods on Transport from server; pass down fetch from your view +page.[t/j]s :)',
+					status: 500
+				});
+			}
+			const hasBody = ['post', 'put', 'upload'].includes(method.toLowerCase());
+			beforeSend!(init.headers as Params);
 
-		try {
-			const reqInit = {
-				...init,
-				method,
-				body
-			};
-			const resp = await _fetch(remote, reqInit);
-			const status = resp.status;
-			if (!resp.ok) {
-				// const error = await resp.text();
-				const error = `${url} - ${resp.statusText}`;
-				console.log('Error: ', error);
-				return { error, status };
+			if (!hasBody) {
+				url = params ? [url, new URLSearchParams(params).toString()].join('?') : url;
+				init.method = method;
+			} else if (isUpload) {
+				const formData = params! as FormData;
+				formData.append('__client_time', new Date().toISOString());
+				const { ['content-type']: _, ...rest } = init.headers || {};
+				init.headers = rest;
+				init.body = formData as unknown as BodyInit;
+				init.method = formData?.id ? 'put' : 'post';
+			} else {
+				const { ['content-type']: cType } = init.headers || {};
+				init.method = method;
+				const data = { ...(params || {}), __client_time: new Date().toISOString() };
+				init.body = JSON.stringify(data);
+				if (cType === contentType.FormURLEncoded) {
+					init.body = toQueryString(data);
+				}
+
 			}
 
-			const result = (await resp.json()) as K;
-			return { ...result, status };
-		} catch (e: any) {
-			const error = e.toString();
-			console.log('Fetch error: ', error);
-			return { error: 'Fetch error', status: 500 };
-		}
-	};
+			const remote = `${BASE_URL}${url}`;
+			transport.loading.value = true;
+
+			try {
+
+				const resp = await _fetch(remote, init);
+				const status = resp.status;
+				if (!resp.ok) {
+					// const error = await resp.text();
+					const error = `${url} - ${resp.statusText}`;
+					console.log('Error: ', error);
+					return { error, status };
+				}
+
+				const result = (await resp.json()) as K;
+				return { ...result, status };
+			} catch (e: any) {
+				const error = e.toString();
+				console.log('Fetch error: ', error);
+				return { error: 'Fetch error', status: 500 };
+			}
+		};
 
 class TransportImpl implements InternalTransportType {
-	loading: UseEvent<boolean> = useEvents<boolean>('loading', false);
+	loading: UseEvent<boolean> = useEvents<boolean>(NETWORK_LOADING, false);
 	cometListeners: Params = {};
 
 	config: TransportConfig = {
 		BASE_URL: '',
 		DEBUG: false,
-		// realTime: false,
 		fetch: typeof window === 'undefined' ? undefined : window.fetch,
 		init: {
 			method: 'GET',
 			mode: 'cors',
 			credentials: 'same-origin',
 			headers: {
-				'Content-Type': 'application/json; charset=UTF-8'
+				'content-type': 'application/json'
 			}
-		}
+		},
+		beforeSend: () => { }
 	};
 
 	socket: any = null;
@@ -158,7 +182,7 @@ class TransportImpl implements InternalTransportType {
 	}
 
 	async upload(url: string, body: Params) {
-		return await this.fetch(url, 'POST', body);
+		return await this.fetch(url, 'upload', body);
 	}
 	async post<K>(postUrl: string, param: Params): Promise<TransportResponse<K>> {
 		return await this.fetch<K>(postUrl, 'post', param);
@@ -185,9 +209,11 @@ transportsMap['default'] = dt;
 
 const Transport: TransportFactory = {
 	configure(config: TransportConfig) {
-		const { context = 'default', ...rest } = config;
-		const transport = new TransportImpl(rest);
-		transportsMap[context] = transport;
+		if (!config.context) {
+			config.context = 'default';
+		}
+		const transport = new TransportImpl(config);
+		transportsMap[config.context] = transport;
 		return transport;
 	},
 	instance(context?: string | TransportInstanceProps) {
@@ -199,15 +225,21 @@ const Transport: TransportFactory = {
 			}
 			return transport;
 		} else {
-			const { fetch, context: innerContext = 'default' } = context as TransportInstanceProps;
+			const { fetch, context: innerContext = 'default', beforeSend } = context as TransportInstanceProps;
 			const transport = transportsMap[innerContext];
 			if (!transport) {
 				throw Error('Invalid transport context: ' + innerContext);
 			}
-			transport.config.fetch = fetch;
+			if (fetch) {
+				transport.config.fetch = fetch;
+			}
+			if (beforeSend) {
+				transport.config.beforeSend = beforeSend;
+			}
 			return transport;
 		}
 	}
+
 };
 
 export { Transport };

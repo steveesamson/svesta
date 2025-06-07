@@ -1,11 +1,15 @@
-<script lang="ts" generics="T">
+<script lang="ts" generics="T extends WithID">
 	import type { Snippet } from 'svelte';
 	import type { StoreResult, Store } from '$lib/types/index.js';
+	import type { WithID } from '$lib/types/internal.js';
 
-	type ResourceType<T> = { resolve: Snippet<[StoreResult<T>]>; store: Store<T> };
+	type ResourceType<R extends WithID> = {
+		resolve: Snippet<[StoreResult<R>]>;
+		store: Store<R>;
+	};
 	let { store, resolve }: ResourceType<T> = $props();
 </script>
 
-{#if store && store.result}
+{#if store.result}
 	{@render resolve(store.result)}
 {/if}
