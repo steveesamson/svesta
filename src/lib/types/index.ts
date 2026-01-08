@@ -101,6 +101,7 @@ export interface Store<T extends WithID> {
 export type IOSocketTransport = 'websocket' | 'polling';
 export type SocketIOConfig = {
 	transports: IOSocketTransport[];
+	REALTIME_BASE_URL?: string;
 	auth?: (cb: (args: Params) => void) => void;
 };
 export type TransportConfig = {

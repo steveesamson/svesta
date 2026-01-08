@@ -38,6 +38,7 @@ export interface InternalTransportType {
 	loading: UseEvent<boolean>;
 	cometListeners: StoreListenerList;
 	config: TransportConfig;
+	syncer: <K = Params>(url: string, method: HTTPMethod,params?: Params) => Promise<TransportResponse<K>>;
 	// instance:(ctx:string) => InternalTransportType | undefined;
 	destroy: () => void;
 	switchToRealTime: () => Promise<void>;
@@ -46,7 +47,7 @@ export interface InternalTransportType {
 	stopCometsOn: (listener: StoreListener) => void;
 	onComets: (comets: Comet) => void;
 	fetch: <K>(url: string, method: HTTPMethod, params?: Params) => Promise<TransportResponse<K>>;
-	sync: (url: string, method: HTTPMethod, params?: Params) => Promise<TransportResponse>;
+	sync: <K>(url: string, method: HTTPMethod, params?: Params) => Promise<TransportResponse<K>>;
 	upload: (url: string, body: Params) => Promise<TransportResponse>;
 	get: <K>(url: string, params?: Params) => Promise<TransportResponse<K>>;
 	delete: <K>(url: string, params?: Params) => Promise<TransportResponse<K>>;

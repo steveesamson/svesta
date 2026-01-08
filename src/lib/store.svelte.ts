@@ -297,8 +297,10 @@ const getStore = <T extends WithID>({
 		isLoading(false);
 	};
 
-	const post = async <K>(postUrl: string, param: Params): Promise<TransportResponse<K>> => {
-		return await transport.post<K>(`${url}${postUrl}`, param);
+	const post = async <K>(postUrl: string, changes: Params): Promise<TransportResponse<K>> => {
+		const hasData = 'data' in changes;
+		const payload = hasData? changes : { data: changes} 
+		return await transport.post<K>(`${url}${postUrl}`, payload);
 	};
 	const get = async <K>(getUrl: string, param: Params): Promise<TransportResponse<K>> => {
 		return await transport.get<K>(`${url}${getUrl}`, param);
@@ -313,11 +315,13 @@ const getStore = <T extends WithID>({
 		}
 		return { error, status };
 	};
-	const save = async (delta: T): Promise<TransportResponse<T>> => {
-		const mtd = delta.id ? 'put' : 'post',
-			_url = delta.id ? `${url}/${delta.id}` : url;
+	const save = async (changes: T): Promise<TransportResponse<T>> => {
 
-		const { error, status, data } = await transport.sync(_url, mtd, delta);
+		const hasData = 'data' in changes;
+		const delta = hasData? changes.data : changes; 
+        const payload = hasData? changes : { data: changes };
+        const mtd = delta.id ? 'put' : 'post', _url = delta.id ? `${url}/${delta.id}` : url;
+        const { error, status, data } = await transport.sync(_url, mtd, payload);
 
 		let message;
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { StoreResult, StoreProps, StoreState } from '$lib/types/index.js';
+	import type { StoreResult, StoreProps, StoreState, Store } from '$lib/types/index.js';
 	import { useStore } from '$lib/store.svelte.js';
 	import { resultTransformer } from './demo-assets/transformer.js';
 	import Loader from '$lib/components/block-loader.svelte';
@@ -10,14 +10,16 @@
 	type ViewData = { data: StoreState<User> };
 	const { data }: ViewData = $props();
 
-	const usersProps: StoreProps<User> = {
-		resultTransformer,
-		initData: data,
-		queryTransformer(raw: IngressType) {
-			return raw;
-		}
-	};
-	const users = useStore<User>('/users', usersProps);
+	const users = $derived.by<Store<User>>(() => {
+		const usersProps: StoreProps<User> = {
+			resultTransformer,
+			initData: data,
+			queryTransformer(raw: IngressType) {
+				return raw;
+			}
+		};
+		return useStore<User>('/users', usersProps);
+	});
 </script>
 
 {#snippet resolve({ data, page, pages, loading, error }: StoreResult<User>)}

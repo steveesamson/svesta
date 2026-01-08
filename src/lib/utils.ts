@@ -53,5 +53,5 @@ export const debounce = <T extends unknown[]>(callback: (...args: T) => void, de
 
 
 export const beforeSend = (header: Params) => {
-	header['x-api-key'] = 'reqres-free-v1';
+	header['x-api-key'] = 'reqres_0a1deafe155b4aafb7a103de519f33d1';
 }

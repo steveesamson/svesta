@@ -54,16 +54,28 @@ const configOptions: TransportConfig = {
 	fetch: window.fetch,
 	// Allow or disallow migration to web socket.
 	// Default is undefined.
-	realTime: { transport: ['websocket'] },
+	realTime: { 
+		// Optional URL specifically for realTime
+		// especially if it defers from the BASE_URL
+		// Defaults to the BASE_URL's origin
+		REALTIME_BASE_URL: 'https://some-socket-base-url',
+		transport: ['websocket'],
+		// Set data to be shared with the backend/server
+		// Defaults is undefined
+		auth: (cb: (tok: any) => void) => {
+                cb({ token:'some-token' });
+        }
+	},
 	// Allows the override of the base fetch RequestInit.
 	// Default is undefined.
 	init: RequestInit,
 	// If you do not want the transport to be a top-level(default)
 	// one, tag it with a context
 	// This allows you have multiple transport instances.
-	context: 'news' // This is used in accessing the instance later
+	context: 'news', // This is used in accessing the instance later
 	// A function that allows user set headers before sending requests
 	beforeSend(headers:Params){
+		headers['some-header'] = 'some-header-value';
 	}
 };
 

@@ -15,14 +15,26 @@
 
 ## Source code for svesta demo
 
+### beforeSend
+Set API key before requesting resource.
+
+```ts
+// $lib/utils.ts
+export const beforeSend = (headers:Params) => {
+		headers['api-key'] = 'some-api-key';
+}
+
+```
+
 ### +layout.ts
 
 While `Transport` setup could be done within your view's `$effect` or in your `+page.[j|t]s`, the recommended place to do the setup is the `+layout.[j|t]s` like below:
 
 ```ts
 import { Transport } from 'svesta';
+import { beforeSend } from '$lib/utils.js';
 // This is configured on the default context
-Transport.configure({ BASE_URL: 'https://reqres.in/api' });
+Transport.configure({ BASE_URL: 'https://reqres.in/api', beforeSend });
 export const prerender = true;
 ```
 
@@ -64,15 +76,16 @@ export const load: PageLoad = async ({ fetch }) => {
 	type ViewData = { data: StoreState<User>; }
 	const { data }: ViewData = $props();
 
-	const usersProps: StoreProps<User> = {
-		resultTransformer,
-		initData: data,
-		queryTransformer(raw:IngressType){
-			return raw;
-		}
-	};
-	const users = useStore<User>( 'users', usersProps );
-
+	const users = $derived.by<Store<User>>(() => {
+		const usersProps: StoreProps<User> = {
+			resultTransformer,
+			initData: data,
+			queryTransformer(raw: IngressType) {
+				return raw;
+			}
+		};
+		return useStore<User>('/users', usersProps);
+	});
 
 
 </script>
