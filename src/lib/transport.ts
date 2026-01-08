@@ -86,7 +86,6 @@ const withFetch =
 				const resp = await _fetch(remote, init);
 				const status = resp.status;
 				if (!resp.ok) {
-					// const error = await resp.text();
 					const error = `${url} - ${resp.statusText}`;
 					console.log('Error: ', error);
 					return { error, status };
@@ -104,6 +103,7 @@ const withFetch =
 class TransportImpl implements InternalTransportType {
 	loading: UseEvent<boolean> = useEvents<boolean>(NETWORK_LOADING, false);
 	cometListeners: Params = {};
+	syncer: <K = Params>(url: string, method: HTTPMethod,params?: Params) => Promise<TransportResponse<K>>;
 
 	config: TransportConfig = {
 		BASE_URL: '',
@@ -124,6 +124,7 @@ class TransportImpl implements InternalTransportType {
 
 	constructor(config: TransportConfig) {
 		this.config = { ...this.config, ...config };
+		this.syncer = withFetch(this);
 	}
 
 	async fetch<K>(
@@ -134,16 +135,16 @@ class TransportImpl implements InternalTransportType {
 		return withFetch(this)<K>(url, method, params);
 	}
 
-	async sync(
+	async sync<K>(
 		url: string,
 		method: HTTPMethod,
 		params: Params | undefined = undefined
-	): Promise<TransportResponse> {
-		return withFetch(this)<Params>(url, method, params);
+	): Promise<TransportResponse<K>> {
+		return this.syncer<K>(url, method, params);
 	}
 
 	destroy() {
-		this.sync = withFetch(this);
+		this.syncer = withFetch(this);
 		this.socket = null;
 	}
 
@@ -174,7 +175,7 @@ class TransportImpl implements InternalTransportType {
 	onComets(comets: Comet) {
 		const { DEBUG } = this.config;
 		if (DEBUG) {
-			console.log('IO: ', 'oncomets: ', comets.room, comets.verb, comets.data);
+			console.log('onComets: ', comets.room, comets.verb, comets.data);
 		}
 		const listeners = this.cometListeners[comets.room] || [];
 		if (!listeners.length) return;
