@@ -23,12 +23,22 @@ export const useRealtime = async (transport: InternalTransportType) => {
 				}
 				return new Promise((resolve) => {
 					try {
-						const data = { ...params, __client_time: new Date().toISOString() };
-						socket.emit(method, { path: url, data }, (m: TransportResponse<K>) => {
+						 const hasBody = ['post', 'put', 'patch'].includes(method.toLowerCase());
+                        let _url = url;
+                        let data = params??{};
+						let query = params??{};
+                        if (!hasBody) {
+								query.__client_time = new Date().toISOString();
+								_url = [url, new URLSearchParams(query).toString()].join('?');
+                            data = {};
+                        }else{
+                            data.__client_time = new Date().toISOString();
+                        }
+						socket.emit(method, { path: _url, data }, (response: TransportResponse<K>) => {
 							if (DEBUG) {
-                                console.log('RealTime Result: ', { m, url, method, data });
-                            }
-							resolve(m as Response);
+                                console.log('RealTime Result: ', { response, url, method, params });
+                            } 
+							resolve(response as Response);
 						});
 					} catch (e: any) {
 						if (DEBUG) {
